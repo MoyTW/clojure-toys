@@ -44,8 +44,10 @@
 	      (assoc p-map :out-file (suffix-file (:in-file p-map) "-broken"))
 	    :else p-map))))
 
-;; Should catch exceptions on I/O!
 (defn -main
   [& args]
   (let [cli-map (get-args args)]
-    (spit (:out-file cli-map) (process-file (slurp (:in-file cli-map))))))
+    (try
+      (spit (:out-file cli-map) (process-file (slurp (:in-file cli-map))))
+	  (catch java.io.IOException e
+	    (prn (.toString e))))))
