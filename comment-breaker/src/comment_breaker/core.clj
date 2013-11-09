@@ -48,6 +48,8 @@
   [& args]
   (let [cli-map (get-args args)]
     (try
-      (spit (:out-file cli-map) (process-file (slurp (:in-file cli-map))))
+	  (->> (slurp (:in-file cli-map))
+		   (process-file)
+		   (spit (:out-file cli-map)))
 	  (catch java.io.IOException e
 	    (prn (.toString e))))))
