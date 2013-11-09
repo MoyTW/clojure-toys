@@ -2,7 +2,7 @@
   (:gen-class))
 (use '[clojure.tools.cli :only[cli]])
 
-(def line-length (atom 80))
+(def line-length (atom nil))
 (def sep-char (atom "\r\n"))
 
 (defn suffix-file [fstr suffix]
@@ -27,21 +27,25 @@
   (clojure.string/join @sep-char
     (map eat-line (clojure.string/split contents (re-pattern @sep-char)))))
 
+(defn get-args [args]
+  (let [parsed
+          (cli args 
+		    ["-i" "--in-file" "File to run comment processing on."]
+			["-o" "--out-file" "Output file."]
+			["-l" "--line-length" "The desired line length." 
+			  :default 80 :parse-fn #(Integer. %)])
+	    p-map (first parsed)]
+	(do
+	  (reset! line-length (:line-length p-map))
+	  (cond 
+	    (not (:in-file p-map))
+	      (do (prn (last parsed)) (System/exit 0))
+	    (not (:out-file p-map))
+	      (assoc p-map :out-file (suffix-file (:in-file p-map) "-broken"))
+	    :else p-map))))
+
 ;; Should catch exceptions on I/O!
 (defn -main
   [& args]
-  (let [cli-vec 
-          (cli args
-               ["-i" "--in-file" "File to run comment processing on." 
-                 :default nil]
-               ["-o" "--out-file" "Output file." :default nil]
-               ["-l" "--line-length" "The desired line length." 
-                 :default 80 :parse-fn #(Integer. %)])
-        cli-map (first cli-vec)
-        ifile (:in-file cli-map)
-        ofile (if-let [o (:out-file cli-map)] o	
-                (suffix-file ifile "-broken"))]		; causes a NPE if no in!
-    (if-not ifile (prn (last cli-vec))
-      (do
-        (reset! line-length (:line-length cli-map))
-        (spit ofile (process-file (slurp ifile)))))))
+  (let [cli-map (get-args args)]
+    (spit (:out-file cli-map) (process-file (slurp (:in-file cli-map))))))
