@@ -5,6 +5,7 @@
 (def line-length (atom nil))
 (def sep-char (atom "\r\n"))
 
+;;;; Functions to process the file and break it into comments
 (defn suffix-file [fstr suffix]
   (let [splits (clojure.string/split fstr #"\.")]
     (str (apply str (butlast splits)) suffix "." (last splits))))
@@ -25,16 +26,16 @@
     
 (defn process-file [contents]
   (clojure.string/join @sep-char
-    (map eat-line (clojure.string/split contents (re-pattern @sep-char)))))
+		(map eat-line (clojure.string/split contents (re-pattern @sep-char)))))
 
 (defn get-args [args]
   (let [parsed
           (cli args 
-		    ["-i" "--in-file" "File to run comment processing on."]
-			["-o" "--out-file" "Output file."]
-			["-l" "--line-length" "The desired line length." 
-			  :default 80 :parse-fn #(Integer. %)])
-	    p-map (first parsed)]
+						["-i" "--in-file" "File to run comment processing on."]
+						["-o" "--out-file" "Output file."]
+						["-l" "--line-length" "The desired line length." 
+							:default 80 :parse-fn #(Integer. %)])
+				p-map (first parsed)]
 	(do
 	  (reset! line-length (:line-length p-map))
 	  (cond 
@@ -49,7 +50,7 @@
   (let [cli-map (get-args args)]
     (try
 	  (->> (slurp (:in-file cli-map))
-		   (process-file)
-		   (spit (:out-file cli-map)))
+				 (process-file)
+				 (spit (:out-file cli-map)))
 	  (catch java.io.IOException e
 	    (prn (.toString e))))))
