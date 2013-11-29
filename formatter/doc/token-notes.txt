@@ -1,0 +1,10 @@
+See: http://clojure.org/reader
+
+(def types #{:symbol :string :long :bigint :keyword :vector
+
+Map/value pairs for tokens:
+    Keyword:    Value:
+    :token      string
+    :type       
+    :col        int
+    :ln         int

@@ -1,0 +1,30 @@
+S = (Form)*
+
+<Form> = Eval | MacroChar | Symbol | Literal | Vector | Map (*List requires the quote macro: Set requires the Dispatch macro*) (*'Regular' Forms*)
+    Eval = <'('> Form* <')'>
+    
+    <MacroChar> = Quote | Dispatch | Comment (*TODO - | Slash | Metadata*)
+        Quote = <"'"> NoEvalForm
+            <NoEvalForm> = List | MacroChar | Symbol | Literal | Vector | Map
+                List = <'('> Form* <')'>
+        Dispatch = <'#'> ReaderMacro
+            <ReaderMacro> = Set | Regex (*TODO - | VarQuote | AnonFunc | IgnoreForm*)
+                Set = <'{'> Form* <'}'>
+                Regex = String
+        Comment = ";" #'[^\n]*'
+    
+    Symbol = #'[a-zA-Z\*\+\!\-\_\?][a-zA-Z0-9\*\+\!\-\_\?]*' (*TODO - implement the rules regarding dot colons and slash characters*)
+    
+    <Literal> = String | Number | Character | Boolean | Keyword | 'nil'
+        String = <'"'>#'(\\\"|[^"])*'<'"'> (*Matches \\\" or any char not \"*)
+        <Number> = Integer | Float | Ratio (* TODO - add in support for hex/oct forms*)
+            Integer = #'[+-]?[0-9]+r?[0-9]*' (*The r is so you can do 8r52 - 8 radix 52*)
+            Float = #'[+-]?([0-9]*\.[0-9]+|[0-9]+\.[0-9]*)' | (*Decimal form*)
+                    #'[+-]?[0-9]+\.?[0-9]*e[+-]?[0-9]+' (*Exponent form*)
+            Ratio = #'[+-]?[0-9]+/[0-9]+'
+        Character = #'\\.' | '\\newline' | '\\space' | '\\tab' | '\\formfeed' | '\\backspace' | '\\return' (* TODO - add in support for unicode character representations!*)
+        Boolean = 'true' | 'false'
+        Keyword = #'::?[a-zA-Z0-9\*\+\!\-\_\?]*'
+    
+    Vector = <'['> Form* <']'>
+    Map = <'{'> Form Form <'}'>

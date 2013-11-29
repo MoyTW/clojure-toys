@@ -1,0 +1,85 @@
+So! How shall we design this thing?
+    
+First - what are the things that it should be doing? Well, here's a few:
+    * Break comments over 80 lines
+    * Detect (if (not ...) ...) and replace with if-not
+    * Detect (when (not ...) ...) and replace with when-not
+    * Detect compound gt/lt statements (and (> x 5) (< x 10)) and resolve into one statement
+    * Detect when you could possibly use a threading (-> or ->>) macro
+    * Automatically align function arguments
+These basically boil down to two categories - non-semantics-changing automatic reformatting, and trivial refactorings of unfavorable patterns. So how do we represent the code in a manner this both exposes the semantics of the statements while keeping the actual text of the code?
+
+...it is time to learn about compilers.
+
+Okay, so, how do we do what we need to do here?
+
+I just went and read http://norvig.com/lispy.html (and http://steve-yegge.blogspot.com/2007/06/rich-programmer-food.html but that's just a rant and not acutally helpful). So, what do I need?
+
+I want to end up with something that converts this:
+0   (def double [x]
+1     (* x x))
+Into this:
+["def" "double" ["vector" "x"] ["*" "x" "x"]]
+
+Now, the issue here is that whatever goes in also has to come back out. That is, if we have
+    0   (if (not (= x 5))
+    1     x 
+    2     y)
+which translates into:
+    ["if" ["not" ["=" "x" "5"]] "x" "y"]
+and we want to indent the x and y arguments to if to match, we can't actually use the token sequence there to handle indentation, because it strips that information out! In fact, the above token sequence is equivalent to
+    0   (if (not (= x 5)) x y)
+which is obviously very different, for our purposes! However, we could try and amend this approach, producing something like the following:
+    [{:token "if", :line 0} 
+      [{:token "not", :line 0} 
+        [{:token "=" :line 0} {:token "x" :line 0} {:token "5" :line 0}]]
+      {:token "x" :line 1}
+      {:token "y" :line 2}]
+versus
+    [{:token "if", :line 0} 
+      [{:token "not", :line 0} 
+        [{:token "=" :line 0} {:token "x" :line 0} {:token "5" :line 0}]]
+      {:token "x" :line 0}
+      {:token "y" :line 0}]
+This provides some of that information that's missing.
+
+So we have a model-view thing going on here. It seems that the model is the parse tree and the view is the formatting. We can futz with the formatting as much as we want, and it doesn't change the code. So...okay, but how does this help us out?
+
+See, the thing is, we want everything to be as it was in the code, except for the things we want to change. So if we disable the indentation, it should print out...wait. Wait, hold on.
+
+How about we actually roll the formatting information into the parse tree, like so:
+    0   (if (not (= x 5))
+    1     x
+    2     y)
+Gives us:
+    [{:tk "if", :cl 0, :ln 0}
+      [{:tk "not", :cl 4, :ln 0}
+        [{:tk "=", :cl 9, :ln 0} {:tk "x", :cl 12, :ln 0} {:tk "5", :cl 14, :ln 0}]]
+      {:tk "x", :cl 2, :ln 1}
+      {:tk "y", :cl 2, :ln 2}]
+This contains all the information we need to faithfully recreate the form.
+Well, actually, it doesn't, because it ignores the positions of the '(' and ')' characters! If you happened to write something like
+    0   (if (not (= x 5))
+    1     x
+    2     y
+    3   )
+the aforementioned algorithm won't actually pick up what you want! I mean, not that it should, because if you write that you're silly, but...you know what. If you write that, you're silly, and you should feel silly, and I'm just going to leave proper trailing parens as a feature, not a bug.
+
+So the way it should work is this:
+    * Parse code into a syntax tree
+    * Create a list of extensions, get a list of reified objects taking the syntax tree and returning another syntax tree
+    * Pass it through them in succession
+    
+A Note On Comments:
+    0   (if (= x 5) ;this is a comment!
+    1     x
+    2     y)
+will decompose down to:
+    [{:tk "if", :cl 0, :ln 0}
+      [{:tk "=", :cl 4, :ln 0} {:tk "x", :cl 7, :ln 0} {:tk "5", :cl 9, :ln 0}]
+      {:tk ";this is a comment!", :cl 12, :ln 0}
+      {:tk "x", :cl 2, :ln 1}
+      {:tk "y", :cl 2, :ln 2}]
+Also, note that the column of the *first* thing in a parameter list is the position of the *paren*, and *not* the position of the text.
+
+GO LOOK AT https://github.com/Engelberg/instaparse!
