@@ -6,10 +6,10 @@
 (def robj (load-file "src/formatter/extensions/comment_length.clj"))
             
 (def t0-in
-";;   This is a line of exceptional length! It should be broken into two lines! The whitespace at the end of the lines may be intact.")
+";;   This is a line of exceptional length! It should be broken into two lines! The whitespace at the end of the lines will be stripped.")
 (def t0-out
-";;   This is a line of exceptional length! It should be broken into two lines! 
-;; The whitespace at the end of the lines may be intact.")
+";;   This is a line of exceptional length! It should be broken into two lines!
+;; The whitespace at the end of the lines will be stripped.")
 (def map-0 {:in (par/parser t0-in :unhide :content) 
             :out (par/parser t0-out :unhide :content)})
 (deftest test-breaks
