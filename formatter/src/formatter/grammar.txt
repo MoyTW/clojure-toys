@@ -1,6 +1,7 @@
 S = (Form)*
 
 <Form> = Eval | MacroChar | Symbol | Literal | Vector | Map (*List requires the quote macro: Set requires the Dispatch macro*) (*'Regular' Forms*)
+              | SpecialForm
     Eval = <'('> Form* <')'>
     
     <MacroChar> = Quote | Dispatch | Comment (*TODO - | Slash | Metadata*)
@@ -8,9 +9,10 @@ S = (Form)*
             <NoEvalForm> = List | MacroChar | Symbol | Literal | Vector | Map
                 List = <'('> Form* <')'>
         Dispatch = <'#'> ReaderMacro
-            <ReaderMacro> = Set | Regex (*TODO - | VarQuote | AnonFunc | IgnoreForm*)
+            <ReaderMacro> = Set | Regex | AnonFuncLit (*TODO - | VarQuote | IgnoreForm*)
                 Set = <'{'> Form* <'}'>
                 Regex = String
+                AnonFuncLit = <'('> Form* <')'>
         Comment = ";" #'[^\n]*'
     
     Symbol = #'[a-zA-Z\*\+\!\-\_\?][a-zA-Z0-9\*\+\!\-\_\?]*' (*TODO - implement the rules regarding dot colons and slash characters*)
@@ -27,4 +29,7 @@ S = (Form)*
         Keyword = #'::?[a-zA-Z0-9\*\+\!\-\_\?]*'
     
     Vector = <'['> Form* <']'>
-    Map = <'{'> Form Form <'}'>
+    Map = <'{'> (Form Form)* <'}'>
+    
+    <SpecialForm> = JConstructor
+        JConstructor = <'('> Form '.' Form* <')'>

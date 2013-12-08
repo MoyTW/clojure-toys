@@ -10,8 +10,8 @@
 (def t0-out
 ";;   This is a line of exceptional length! It should be broken into two lines!
 ;; The whitespace at the end of the lines will be stripped.")
-(def map-0 {:in (par/parser t0-in :unhide :content) 
-            :out (par/parser t0-out :unhide :content)})
+(def map-0 {:in (par/parser t0-in) 
+            :out (par/parser t0-out)})
 (deftest test-breaks
   (testing "Tests that it will change the tree if it should"
     (is (= (modify-tree robj (:in map-0))
@@ -21,8 +21,8 @@
 "(fn custom-interpose [sep, in-seq]
   (butlast (flatten
    (map (fn [in, sep] [in sep]) in-seq (take (count in-seq) (repeat sep))))))")
-(def map-1 {:in (par/parser t1-str :unhide :content) 
-            :out (par/parser t1-str :unhide :content)})
+(def map-1 {:in (par/parser t1-str) 
+            :out (par/parser t1-str)})
 (deftest test-does-not-break
   (testing "Tests that unmodified does not change tree"
     (is (= (modify-tree robj (:in map-1))

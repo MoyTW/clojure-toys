@@ -11,7 +11,9 @@
 (def grammar (slurp "src/formatter/grammar.txt"))
 (def str-str (slurp "src/formatter/string.txt"))
 
-(def parser (insta/parser grammar :auto-whitespace grammar-whitespace))
+(def par (insta/parser grammar :auto-whitespace grammar-whitespace))
+(defn parser [s & args]
+  (par s :unhide :content))
 
 (def string-simple
 "(cons 4 [1 23])")

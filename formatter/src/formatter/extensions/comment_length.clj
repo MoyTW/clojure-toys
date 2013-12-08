@@ -5,7 +5,7 @@
   
 (defn should-break? [comment-str]
   (and (> (count comment-str) max-length)
-       (= (first comment-str) \;))))
+       (= (first comment-str) \;)))
 
 (defn build-line [lines nxt]
   (let [last-line (last lines)
