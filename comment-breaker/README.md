@@ -6,8 +6,11 @@ Targets comments with two semicolons. Will indent the head line of the broken
 comment by two spaces.
 
 For example,
+
 	;; This is a very long comment that goes over eighty characters! It's Not Ideal At All!
+
 will become
+
 	;;   This is a very long comment that goes ever eighty characters! It's Not
 	;; Ideal At All.
 
