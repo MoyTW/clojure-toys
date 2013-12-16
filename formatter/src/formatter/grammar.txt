@@ -15,7 +15,7 @@ S = (Form)*
                 AnonFuncLit = <'('> Form* <')'>
         Comment = ";" #'[^\n]*'
     
-    Symbol = #'[a-zA-Z\*\+\!\-\_\?][a-zA-Z0-9\*\+\!\-\_\?]*' (*TODO - implement the rules regarding dot colons and slash characters*)
+    Symbol = #'[a-zA-Z\*\+\!\-\_\?\=<>%][a-zA-Z0-9\*\+\!\-\_\?\=\.<>%]*/?[a-zA-Z0-9\*\+\!\-\_\?\=\.<>%]*' (*TODO - implement the rules regarding dot colons and slash characters*)
     
     <Literal> = String | Number | Character | Boolean | Keyword | 'nil'
         String = <'"'>#'(\\\"|[^"])*'<'"'> (*Matches \\\" or any char not \"*)
@@ -32,4 +32,4 @@ S = (Form)*
     Map = <'{'> (Form Form)* <'}'>
     
     <SpecialForm> = JConstructor
-        JConstructor = <'('> Form '.' Form* <')'>
+        JConstructor = Form '.' Form*
