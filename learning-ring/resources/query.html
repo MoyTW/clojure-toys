@@ -5,8 +5,11 @@
     <body>
         <p>Hello!</p>
         <p>Type the name of a function in clojure.core:</p>
-        <form>
+        <form method='post'>
             Function: <input name='name' type='text'>
+            <br>
+            <p>OR: Enter some clojure code!</p>
+            <textarea name='code' rows="10" cols="50"></textarea>
             <br>
             <input type='submit'>
         </form>
