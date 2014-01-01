@@ -4,15 +4,18 @@
   (:gen-class))
 (use '[clojure.tools.cli :only[cli]])
 
+(def files (rest (file-seq (clojure.java.io/file "src/formatter/extensions"))))
+
 (defn apply-extension [file tree]
   (let [ext (load-file (.getAbsolutePath file))]
     (if (is-active ext)
         (modify-tree (load-file (.getAbsolutePath file)) tree)
         tree)))
   
-(defn apply-all-extensions [files tree]
-  (reduce (fn [t n] (apply-extension n t)) tree files))
-               
+(defn apply-all-extensions [tree]
+  (let [result-tree (reduce (fn [t n] (apply-extension n t)) tree files)]
+    (par/htree-to-str result-tree)))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
@@ -22,13 +25,9 @@
                ["-o" "--out-file" "Output file."])
         tree (try 
                (par/parser (slurp (:in-file p-map)) :unhide :content)
-               (catch IllegalArgumentException e))
-        files (rest 
-                (file-seq 
-                  (clojure.java.io/file "src/formatter/extensions")))]
+               (catch IllegalArgumentException e))]
     (if-not tree (prn p-docstr)
-      (let [result-tree (apply-all-extensions files tree)
-            result-string (par/htree-to-str result-tree)]
+      (let [result (apply-all-extensions tree)]
         (if (:out-file p-map)
-            (spit (:out-file p-map) result-string)
-            (prn result-string))))))
+            (spit (:out-file p-map) result)
+            (prn result))))))
