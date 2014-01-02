@@ -2,7 +2,9 @@
 ; Contents: .doc > .content
 (ns learning-ring.core
   (:require [net.cgrand.enlive-html :as html]
-            [net.cgrand.xml :as xml])
+            [net.cgrand.xml :as xml]
+			[formatter.core :as f]
+			[formatter.parser :as par])
   (:use net.cgrand.enlive-html
         ring.adapter.jetty
         ring.util.response
@@ -42,7 +44,7 @@
 ;; Hmm. The (= name "") doesn't work - you can enter spaces, and it goes to...http://clojuredocs.org/clojure_core/clojure.core/! And that's valid, so it doesn't get a FileNotFound, but read-documentation returns nothing.
 (defn handler [{{code "code" name "name"} :params}]
   (cond
-    code (response code)
+    code (response (f/apply-all-extensions (par/parser code)))
     (= name "") (response "You have entered...nothing. Hit back and try again.")
     (= name nil) (response (apply str (query)))
     :else (query-docs name)))
@@ -55,3 +57,7 @@
 
 (defn boot[]
   (ring.adapter.jetty/run-jetty #'app {:port 3000}))
+
+;(when (not pred )
+;       foo
+;       bar)

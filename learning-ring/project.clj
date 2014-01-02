@@ -7,4 +7,5 @@
                  [ring/ring-core "1.2.1"]
                  [ring/ring-jetty-adapter "1.2.1"]
                  [ring/ring-devel "1.2.1"]
-                 [enlive "1.1.5"]])
+                 [enlive "1.1.5"]
+				 [formatter "0.1.0-SNAPSHOT"]])

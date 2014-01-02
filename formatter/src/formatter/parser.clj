@@ -5,7 +5,7 @@
 (def grammar-whitespace (insta/parser "Whitespace = #'[,\\s]+'"))
   
 ; Doesn't have Other Special Forms, Binding Forms
-(def grammar (slurp "src/formatter/grammar.txt"))
+(def grammar (slurp (clojure.java.io/resource "grammar.txt")))
 
 (def par (insta/parser grammar :auto-whitespace grammar-whitespace))
 (defn parser [s & args]

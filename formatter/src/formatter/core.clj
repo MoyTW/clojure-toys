@@ -5,6 +5,7 @@
 (use '[clojure.tools.cli :only[cli]])
 
 (def files (rest (file-seq (clojure.java.io/file "src/formatter/extensions"))))
+(prn files)
 
 (defn apply-extension [file tree]
   (let [ext (load-file (.getAbsolutePath file))]
