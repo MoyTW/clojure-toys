@@ -1,5 +1,3 @@
-; Function/Macro form: .usage ul li
-; Contents: .doc > .content
 (ns learning-ring.core
   (:require [net.cgrand.enlive-html :as html]
             [net.cgrand.xml :as xml]
@@ -12,6 +10,8 @@
         ring.middleware.reload
         ring.middleware.stacktrace))
 
+(html/deftemplate formatted-code "formatted_code.html" [code]
+  [:textarea#display] (html/content code))
 (html/deftemplate query "query.html" [])
 (html/deftemplate function-not-found "function_not_found.html" [fname]
   [:p#fname] (html/content fname))
@@ -44,7 +44,7 @@
 ;; Hmm. The (= name "") doesn't work - you can enter spaces, and it goes to...http://clojuredocs.org/clojure_core/clojure.core/! And that's valid, so it doesn't get a FileNotFound, but read-documentation returns nothing.
 (defn handler [{{code "code" name "name"} :params}]
   (cond
-    code (response (f/apply-all-extensions (par/parser code)))
+    code (response (apply str (formatted-code (f/apply-all-extensions (par/parser code)))))
     (= name "") (response "You have entered...nothing. Hit back and try again.")
     (= name nil) (response (apply str (query)))
     :else (query-docs name)))
@@ -57,7 +57,3 @@
 
 (defn boot[]
   (ring.adapter.jetty/run-jetty #'app {:port 3000}))
-
-;(when (not pred )
-;       foo
-;       bar)
