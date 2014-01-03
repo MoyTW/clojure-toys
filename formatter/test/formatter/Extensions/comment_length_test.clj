@@ -1,9 +1,11 @@
 (ns formatter.extensions.comment-length-test
   (:use formatter.extension)
   (:require [clojure.test :refer :all]
-            [formatter.parser :as par]))
+            [formatter.parser :as par]
+            [clojure.java.io :as io]))
 
-(def robj (load-file "src/formatter/extensions/comment_length.clj"))
+(def fpath (str (io/as-file (io/resource "extensions/comment_length.clj"))))
+(def robj (load-file fpath))
             
 (def t0-in
 ";;   This is a line of exceptional length! It should be broken into two lines! The whitespace at the end of the lines will be stripped.")

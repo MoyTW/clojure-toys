@@ -1,10 +1,11 @@
 (ns formatter.core
   (:use formatter.extension)
-  (:require [formatter.parser :as par])
+  (:require [formatter.parser :as par]
+            [clojure.java.io :as io])
   (:gen-class))
 (use '[clojure.tools.cli :only[cli]])
 
-(def files (rest (file-seq (clojure.java.io/file "src/formatter/extensions"))))
+(def files (rest (file-seq (io/as-file (io/resource "extensions")))))
 (prn files)
 
 (defn apply-extension [file tree]

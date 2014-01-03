@@ -1,9 +1,10 @@
 (ns formatter.extensions.when-not-test
   (:use formatter.extension)
   (:require [clojure.test :refer :all]
-            [formatter.parser :as par]))
+            [formatter.parser :as par]
+            [clojure.java.io :as io]))
 
-(def robj (load-file "src/formatter/extensions/when_not.clj"))
+(def robj (load-file (str (io/as-file (io/resource "extensions/when_not.clj")))))
             
 (def t0-in
 "(when (not pred )
