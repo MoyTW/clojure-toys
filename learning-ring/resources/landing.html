@@ -1,0 +1,57 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>Enlive Test!</title>
+    </head>
+    
+    <style>
+        h1 {
+            text-align:center;
+        }
+        .centerline {
+            margin-left:25px;
+            margin-right:25px;
+            border:dotted;
+        }
+        .main-area {
+            width:60%;
+            float:right;
+            position:relative;
+            margin-right:5%;
+        }
+        .sidebar {
+            float:left;
+            width:30%;
+            height:auto;
+        }
+        .code-input {
+            width:100%;
+        }
+    </style>
+    
+    <body>
+        <div id="container" class="centerline">
+            <div id="header">
+                <h1>Clojure Styler</h1>
+            </div>
+        
+            <div id="code-div" class="main-area">
+                <p>This is a website that aims to style your code, according to <a href="https://github.com/bbatsov/clojure-style-guide">The Clojure Style Guide</a>. Specific rules are listed on the sidebar at the left.</p>
+                <p>Copy/Paste your clojure code below:</p>
+                <form method="post">
+                    <textarea name="code" class="code-input" rows="10" cols="30"></textarea>
+                    <br>
+                    <input type="submit">
+                </form>
+            </div>
+            
+            <div id="extensions-div" class="sidebar">
+                <h1><a href="https://github.com/bbatsov/clojure-style-guide">The Clojure Style Guide</a></h1>
+                <h2>Extensions Used:</h2>
+                <ul id="extensions-list">
+                    <li>Thing1</li>
+                    <li>Thing2</li>
+                </ul>
+            </div>
+        </div>
+    </body>
+</html>

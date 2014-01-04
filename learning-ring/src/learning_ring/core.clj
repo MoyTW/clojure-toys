@@ -10,6 +10,7 @@
         ring.middleware.reload
         ring.middleware.stacktrace))
 
+(html/deftemplate landing "landing.html" [])
 (html/deftemplate formatted-code "formatted_code.html" [code]
   [:textarea#display] (html/content code))
 (html/deftemplate query "query.html" [])
@@ -46,7 +47,7 @@
   (cond
     code (response (apply str (formatted-code (f/apply-all-extensions (par/parser code)))))
     (= name "") (response "You have entered...nothing. Hit back and try again.")
-    (= name nil) (response (apply str (query)))
+    (= name nil) (response (apply str (landing)))
     :else (query-docs name)))
 
 (def app
