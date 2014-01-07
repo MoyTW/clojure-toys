@@ -1,5 +1,4 @@
-(ns formatter.extensions.comment-length
-  (:use formatter.extension))
+(ns formatter.extensions.comment-length)
   
 (def max-length 80)
   
@@ -38,7 +37,5 @@
               (vector? node) (conj tree (find-comment node))
               :else (conj tree node)))]
   (reduce reduce-tree [] tree)))
-          
-(reify FormatterExtension
-  (is-active [this] true)
-  (modify-tree [this tree] (find-comment tree)))
+ 
+{:is-active true, :modify-tree #(find-comment %)}

@@ -1,5 +1,4 @@
 (ns formatter.extensions.comment-length-test
-  (:use formatter.extension)
   (:require [clojure.test :refer :all]
             [formatter.parser :as par]
             [clojure.java.io :as io]))
@@ -16,7 +15,7 @@
             :out (par/parser t0-out)})
 (deftest test-breaks
   (testing "Tests that it will change the tree if it should"
-    (is (= (modify-tree robj (:in map-0))
+    (is (= ((:modify-tree robj) (:in map-0))
            (:out map-0)))))
 
 (def t1-str
@@ -27,5 +26,5 @@
             :out (par/parser t1-str)})
 (deftest test-does-not-break
   (testing "Tests that unmodified does not change tree"
-    (is (= (modify-tree robj (:in map-1))
+    (is (= ((:modify-tree robj) (:in map-1))
            (:out map-1)))))

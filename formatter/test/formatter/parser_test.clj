@@ -1,5 +1,4 @@
 (ns formatter.parser-test
-  (:use formatter.extension)
   (:require [clojure.test :refer :all]
             [formatter.parser :as par]
             [instaparse.core :as insta]))

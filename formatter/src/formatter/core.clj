@@ -6,16 +6,15 @@
 (use '[clojure.tools.cli :only[cli]])
 
 (def files (rest (file-seq (io/as-file (io/resource "extensions")))))
-(prn files)
+(def extensions (map #(load-file (.getAbsolutePath %)) files))
 
-(defn apply-extension [file tree]
-  (let [ext (load-file (.getAbsolutePath file))]
-    (if (is-active ext)
-        (modify-tree (load-file (.getAbsolutePath file)) tree)
-        tree)))
+(defn apply-extension [extension tree]
+  (if (:is-active extension)
+      ((:modify-tree extension) tree)
+      tree))
   
 (defn apply-all-extensions [tree]
-  (let [result-tree (reduce (fn [t n] (apply-extension n t)) tree files)]
+  (let [result-tree (reduce (fn [t n] (apply-extension n t)) tree extensions)]
     (par/htree-to-str result-tree)))
 
 (defn -main
