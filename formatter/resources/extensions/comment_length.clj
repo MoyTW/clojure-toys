@@ -38,4 +38,7 @@
               :else (conj tree node)))]
   (reduce reduce-tree [] tree)))
  
-{:is-active true, :modify-tree #(find-comment %)}
+{:description "Breaks comments to 80 lines."
+ :url "https://github.com/bbatsov/clojure-style-guide#source-code-layout--organization"
+ :is-active true
+ :modify-tree #(find-comment %)}

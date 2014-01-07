@@ -19,4 +19,7 @@
 (defn fe-modify-tree [tree]
   (insta/transform {:Eval replace-when-not} tree))
 
-{:is-active true, :modify-tree #(fe-modify-tree %)}
+{:description "(when (not ...) ...) -> (when-not ... ...)"
+ :url "https://github.com/bbatsov/clojure-style-guide#syntax"
+ :is-active true
+ :modify-tree #(fe-modify-tree %)}

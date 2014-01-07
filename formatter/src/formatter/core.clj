@@ -1,5 +1,4 @@
 (ns formatter.core
-  (:use formatter.extension)
   (:require [formatter.parser :as par]
             [clojure.java.io :as io])
   (:gen-class))

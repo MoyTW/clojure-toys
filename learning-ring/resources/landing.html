@@ -13,18 +13,30 @@
             border:dotted;
         }
         .main-area {
-            width:60%;
-            float:right;
+            width:55%;
+            margin-left:auto;
+            margin-right:auto;
+            border:dotted
             position:relative;
-            margin-right:5%;
         }
-        .sidebar {
+        .extensions-bar {
             float:left;
-            width:30%;
+            width:20%;
             height:auto;
+            border:dashed;
+            height:500px;
         }
         .code-input {
             width:100%;
+        }
+        .extensions {
+            text-align:left;
+        }
+        .changes-bar {
+            float:right;
+            width:20%;
+            border:dashed;
+            height:500px;
         }
     </style>
     
@@ -33,7 +45,19 @@
             <div id="header">
                 <h1>Clojure Styler</h1>
             </div>
-        
+            
+            <div id="extensions-div" class="extensions-bar">
+                <h1><a href="https://github.com/bbatsov/clojure-style-guide">The Clojure Style Guide</a></h1>
+                <h2>Extensions Used:</h2>
+                <ul class="extensions">
+                    <li><a>Extension One</a></li>
+                </ul>
+            </div>
+            
+            <div class="changes-bar">
+                <h1>Changes</h1>
+            </div>
+            
             <div id="code-div" class="main-area">
                 <p>This is a website that aims to style your code, according to <a href="https://github.com/bbatsov/clojure-style-guide">The Clojure Style Guide</a>. Specific rules are listed on the sidebar at the left.</p>
                 <p>Copy/Paste your clojure code below:</p>
@@ -44,14 +68,7 @@
                 </form>
             </div>
             
-            <div id="extensions-div" class="sidebar">
-                <h1><a href="https://github.com/bbatsov/clojure-style-guide">The Clojure Style Guide</a></h1>
-                <h2>Extensions Used:</h2>
-                <ul id="extensions-list">
-                    <li>Thing1</li>
-                    <li>Thing2</li>
-                </ul>
-            </div>
+            
         </div>
     </body>
 </html>

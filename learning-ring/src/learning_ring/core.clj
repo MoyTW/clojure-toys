@@ -10,7 +10,15 @@
         ring.middleware.reload
         ring.middleware.stacktrace))
 
-(html/deftemplate landing "landing.html" [])
+(def ^:dynamic *extensions-sel* [:.extensions])
+(html/defsnippet extensions-list "landing.html" *extensions-sel*
+  [extension]
+  [:a] (html/do->
+         (content (:description extension))
+         (set-attr :href (:url extension))))
+
+(html/deftemplate landing "landing.html" [e-list]
+  [:.extensions] (html/content (map #(extensions-list %) e-list)))
 (html/deftemplate formatted-code "formatted_code.html" [code]
   [:textarea#display] (html/content code))
 (html/deftemplate query "query.html" [])
@@ -47,7 +55,7 @@
   (cond
     code (response (apply str (formatted-code (f/apply-all-extensions (par/parser code)))))
     (= name "") (response "You have entered...nothing. Hit back and try again.")
-    (= name nil) (response (apply str (landing)))
+    (= name nil) (response (apply str (landing f/extensions)))
     :else (query-docs name)))
 
 (def app
