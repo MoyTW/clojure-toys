@@ -53,7 +53,7 @@
 ;; Hmm. The (= name "") doesn't work - you can enter spaces, and it goes to...http://clojuredocs.org/clojure_core/clojure.core/! And that's valid, so it doesn't get a FileNotFound, but read-documentation returns nothing.
 (defn handler [{{code "code" name "name"} :params}]
   (cond
-    code (response (apply str (formatted-code (f/apply-all-extensions (par/parser code)))))
+    code (response (apply str (formatted-code (first (f/apply-all-extensions [(par/parser code) []])))))
     (= name "") (response "You have entered...nothing. Hit back and try again.")
     (= name nil) (response (apply str (landing f/extensions)))
     :else (query-docs name)))

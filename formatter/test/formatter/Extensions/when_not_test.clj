@@ -4,6 +4,9 @@
             [clojure.java.io :as io]))
 
 (def robj (load-file (str (io/as-file (io/resource "extensions/when_not.clj")))))
+(defn do-modification [tree]
+  (let [[new-tree changes] ((:modify-tree robj) [tree []])]
+    new-tree))
             
 (def t0-in
 "(when (not pred )
@@ -17,7 +20,7 @@
             :out (par/parser t0-out :unhide :content)})
 (deftest test-modifies
   (testing "Tests that it will change the tree if it should"
-    (is (= ((:modify-tree robj) (:in map-0))
+    (is (= (do-modification (:in map-0))
            (:out map-0)))))
 
 (def t1-str
@@ -28,7 +31,7 @@
             :out (par/parser t1-str :unhide :content)})
 (deftest test-does-not-modify
   (testing "Tests that unmodified does not change tree"
-    (is (= ((:modify-tree robj) (:in map-1))
+    (is (= (do-modification (:in map-1))
            (:out map-1)))))
     
 (def t2-in
@@ -43,7 +46,7 @@
             :out (par/parser t2-out :unhide :content)})
 (deftest test-does-modify-pred-not-symbol
   (testing "Tests that it still modifies it, even if the pred is not a symbol"
-    (is (= ((:modify-tree robj) (:in map-2))
+    (is (= (do-modification (:in map-2))
            (:out map-2)))))
            
 (def t3-in
@@ -67,7 +70,7 @@
             :out (par/parser t3-out :unhide :content)})
 (deftest test-whitespace
   (testing "Tests that it handles whitespace properly"
-    (is (= (par/htree-to-str ((:modify-tree robj) (:in map-3)))
+    (is (= (par/htree-to-str (do-modification (:in map-3)))
            (par/htree-to-str (:out map-3))))))
 
 (def t4-in
@@ -91,7 +94,7 @@
             :out (par/parser t4-out :unhide :content)})
 (deftest test-more-whitespace
   (testing "Tests that it handles whitespace properly"
-    (is (= (par/htree-to-str ((:modify-tree robj) (:in map-4)))
+    (is (= (par/htree-to-str (do-modification (:in map-4)))
            (par/htree-to-str (:out map-4))))))
            
 (def t5-in
@@ -114,5 +117,5 @@
             :out (par/parser t5-out :unhide :content)})
 (deftest test-after-other-statement
   (testing "Tests that it handles multi-statement code snippets"
-    (is (= (par/htree-to-str ((:modify-tree robj) (:in map-5)))
+    (is (= (par/htree-to-str (do-modification (:in map-5)))
            (par/htree-to-str (:out map-5))))))

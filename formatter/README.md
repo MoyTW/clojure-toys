@@ -14,7 +14,7 @@ Each different modification (break comments over 80 lines, reformat whitespace) 
 * [:is-active *boolean*] - probably true
 * [:description *string] - a short description of what this extension does
 * [:url *string*] - a url
-* [:modify-tree *(fn [tree] ...)*] - where the function returns the modified tree structure
+* [:modify-tree *(fn [[tree changes]] ...)*] - tree is a hiccup tree, and changes is a vector of strings: returns [[modified-tree updated-changes]]
 
 I'm pretty sure that this is A Dumb Thing To Do - there's probably a better way to get a drop-in extension structure than "Use the last form in the file as a map of this form!"
 

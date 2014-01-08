@@ -22,4 +22,5 @@
 {:description "(when (not ...) ...) -> (when-not ... ...)"
  :url "https://github.com/bbatsov/clojure-style-guide#syntax"
  :is-active true
- :modify-tree #(fe-modify-tree %)}
+ :modify-tree (fn [[tree changes]]
+                [(fe-modify-tree tree) (conj changes "when-not placeholder")])}

@@ -20,4 +20,5 @@
 {:description "(if pred (do ...)) -> (when pred ...)"
  :url "https://github.com/bbatsov/clojure-style-guide#syntax"
  :is-active true
- :modify-tree #(fe-modify-tree %)}
+ :modify-tree (fn [[tree changes]]
+                [(fe-modify-tree tree) (conj changes "if do -> when placeholder")])}
