@@ -19,7 +19,7 @@
 (defn fe-modify-tree [tree]
   (insta/transform {:Eval replace-when-not} tree))
 
-{:description "(when (not ...) ...) -> (when-not ... ...)"
+{:description "Use when-not instead of (when (not ...) ...)."
  :url "https://github.com/bbatsov/clojure-style-guide#syntax"
  :is-active true
  :modify-tree (fn [[tree changes]]

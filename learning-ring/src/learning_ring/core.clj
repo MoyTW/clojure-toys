@@ -10,7 +10,7 @@
         ring.middleware.reload
         ring.middleware.stacktrace))
 
-(def ^:dynamic *extensions-sel* [:.extensions])
+(def ^:dynamic *extensions-sel* [:.extensions :> html/first-child])
 (html/defsnippet extensions-list "landing.html" *extensions-sel*
   [extension]
   [:a] (html/do->
