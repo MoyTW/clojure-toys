@@ -17,8 +17,16 @@
          (content (:description extension))
          (set-attr :href (:url extension))))
 
-(html/deftemplate landing "landing.html" [e-list]
-  [:.extensions] (html/content (map #(extensions-list %) e-list)))
+(def ^:dynamic *changes-sel* [:.changes-list :> html/first-child])
+(html/defsnippet changes-list "landing.html" *changes-sel*
+  [change]
+  [:li] (html/content change))
+
+(html/deftemplate landing "landing.html" [old-code new-code changes e-list]
+  [:.extensions] (html/content (map #(extensions-list %) e-list))
+  [:.changes-list] (html/content (map #(changes-list %) changes))
+  [:.code-input] (html/content old-code)
+  [:.code-output] (html/content new-code))
 (html/deftemplate formatted-code "formatted_code.html" [code]
   [:textarea#display] (html/content code))
 (html/deftemplate query "query.html" [])
@@ -53,9 +61,11 @@
 ;; Hmm. The (= name "") doesn't work - you can enter spaces, and it goes to...http://clojuredocs.org/clojure_core/clojure.core/! And that's valid, so it doesn't get a FileNotFound, but read-documentation returns nothing.
 (defn handler [{{code "code" name "name"} :params}]
   (cond
-    code (response (apply str (formatted-code (first (f/apply-all-extensions [(par/parser code) []])))))
+    code
+      (let [[new-code changes] (f/apply-all-extensions [(par/parser code) []])]
+        (response (apply str (landing code new-code changes f/extensions))))
     (= name "") (response "You have entered...nothing. Hit back and try again.")
-    (= name nil) (response (apply str (landing f/extensions)))
+    (= name nil) (response (apply str (landing "" "" [] f/extensions)))
     :else (query-docs name)))
 
 (def app
