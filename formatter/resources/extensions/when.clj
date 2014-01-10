@@ -1,5 +1,7 @@
 (ns formatter.extensions.when
-  (:require [instaparse.core :as insta]))
+  (:require [instaparse.core :as insta]
+            [clojure.data :as data]
+            [formatter.parser :as par]))
 
 (defn replace-when-not [& args]
   (let [[pre-strs main-vec] (split-with string? args)
@@ -17,8 +19,14 @@
 (defn fe-modify-tree [tree]
   (insta/transform {:Eval replace-when-not} tree))
 
+(defn diff-strs [pre-tree post-tree changes]
+  (reduce #(conj %1 (str "Character: " %2 " - Changed (if ... (do ...)) to (when ...)"))
+          changes
+          (par/diff-hiccup pre-tree post-tree)))
+
 {:description "(if pred (do ...)) -> (when pred ...)"
  :url "https://github.com/bbatsov/clojure-style-guide#syntax"
  :is-active true
  :modify-tree (fn [[tree changes]]
-                [(fe-modify-tree tree) (conj changes "if do -> when placeholder")])}
+                (let [modified-tree (fe-modify-tree tree)]
+                  [modified-tree (diff-strs tree modified-tree changes)]))}
