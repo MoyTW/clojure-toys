@@ -8,4 +8,5 @@
                  [ring/ring-jetty-adapter "1.2.1"]
                  [ring/ring-devel "1.2.1"]
                  [enlive "1.1.5"]
-				 [formatter "0.1.0-SNAPSHOT"]])
+				 [formatter "0.1.0-SNAPSHOT"]
+                 [compojure "1.1.6"]])
