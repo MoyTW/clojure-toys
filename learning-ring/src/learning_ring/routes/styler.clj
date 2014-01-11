@@ -24,8 +24,8 @@
   [:.code-output] (html/content new-code))
 
 (defn resolve-landing [code]
-  (let [[new-code changes] (f/apply-all-extensions [(par/parser code) []])]
-    (response (apply str (landing code new-code changes f/extensions)))))
+  (let [result (f/apply-all-extensions (par/parser code))]
+    (response (apply str (landing code (:text result) (:changes result) f/extensions)))))
   
 (compojure/defroutes routes
   (compojure/GET "/styler" [] (response (apply str (landing "" "" [] f/extensions))))

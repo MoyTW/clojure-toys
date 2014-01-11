@@ -38,8 +38,12 @@
               :else (conj tree node)))]
   (reduce reduce-tree [] tree)))
  
+(defn process-code [{:keys [tree changes suggestions] :as params}]
+  (let [new-tree (find-comment tree)
+        new-changes (conj changes "comments")]
+    (assoc params :tree new-tree :changes new-changes)))
+ 
 {:description "Breaks comments to 80 lines."
  :url "https://github.com/bbatsov/clojure-style-guide#source-code-layout--organization"
  :is-active true
- :modify-tree (fn [[tree changes]]
-                [(find-comment tree) (conj changes "comments")])}
+ :process-code process-code}

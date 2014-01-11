@@ -12,9 +12,11 @@
       ((:process-code extension) tree-and-changes)
       tree-and-changes))
   
-(defn apply-all-extensions [tree-and-changes]
-  (let [result-tree (reduce (fn [t n] (apply-extension n t)) tree-and-changes extensions)]
-    [(par/htree-to-str (first result-tree)) (second result-tree)]))
+(defn apply-all-extensions [tree]
+  (let [result-tree (reduce (fn [t n] (apply-extension n t))
+                            {:tree tree :changes [] :suggestions []}
+                            extensions)]
+    (assoc result-tree :text (par/htree-to-str (:tree result-tree)))))
 
 (defn -main
   "I don't do a whole lot ... yet."

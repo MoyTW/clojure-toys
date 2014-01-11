@@ -19,8 +19,12 @@
 (defn fe-modify-tree [tree]
   (insta/transform {:Eval replace-when-not} tree))
 
+(defn process-code [{:keys [tree changes suggestions] :as params}]
+  (let [new-tree (fe-modify-tree tree)
+        new-changes (conj changes "when-not placeholder")]
+    (assoc params :tree new-tree :changes new-changes)))
+
 {:description "Use when-not instead of (when (not ...) ...)."
  :url "https://github.com/bbatsov/clojure-style-guide#syntax"
  :is-active true
- :modify-tree (fn [[tree changes]]
-                [(fe-modify-tree tree) (conj changes "when-not placeholder")])}
+ :process-code process-code}

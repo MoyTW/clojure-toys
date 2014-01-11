@@ -24,9 +24,12 @@
           changes
           (par/diff-hiccup pre-tree post-tree)))
 
+(defn process-code [{:keys [tree changes suggestions] :as params}]
+  (let [new-tree (fe-modify-tree tree)
+        new-changes (diff-strs tree new-tree changes)]
+    (assoc params :tree new-tree :changes new-changes)))
+          
 {:description "(if pred (do ...)) -> (when pred ...)"
  :url "https://github.com/bbatsov/clojure-style-guide#syntax"
  :is-active true
- :modify-tree (fn [[tree changes]]
-                (let [modified-tree (fe-modify-tree tree)]
-                  [modified-tree (diff-strs tree modified-tree changes)]))}
+ :process-code process-code}

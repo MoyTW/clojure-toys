@@ -18,8 +18,8 @@ Each different modification (break comments over 80 lines, reformat whitespace) 
 
 The structure of the map transformed by :process-code is:
 * [:tree *enlive tree*]
-* [:changes *vector*]
-* [:suggestions *vector*]
+* [:changes *vector (strings for now)*]
+* [:suggestions *vector (strings for now)*]
 
 I'm pretty sure that this is A Dumb Thing To Do - there's probably a better way to get a drop-in extension structure than "Use the last form in the file as a map of this form!"
 
