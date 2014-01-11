@@ -12,9 +12,14 @@ It's not done in the least! But, if you insist:
 Each different modification (break comments over 80 lines, reformat whitespace) is a single Clojure file in the resources/extensions folder. Each file has as its last form a map. When the program is loaded, it scans the extensions folder for all the files, and uses load-file, storing the resulting maps. New extensions can be added by dropping in a clojure file. The key/value pairs used are:
 
 * [:is-active *boolean*] - probably true
-* [:description *string] - a short description of what this extension does
+* [:description *string*] - a short description of what this extension does
 * [:url *string*] - a url
-* [:modify-tree *(fn [[tree changes]] ...)*] - tree is a hiccup tree, and changes is a vector of strings: returns [[modified-tree updated-changes]]
+* [:process-code *(fn [**map**] ...)*] - returns **map**
+
+The structure of the map transformed by :process-code is:
+* [:tree *enlive tree*]
+* [:changes *vector*]
+* [:suggestions *vector*]
 
 I'm pretty sure that this is A Dumb Thing To Do - there's probably a better way to get a drop-in extension structure than "Use the last form in the file as a map of this form!"
 

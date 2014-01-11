@@ -5,8 +5,7 @@
 
 (def robj (load-file (str (io/as-file (io/resource "extensions/when.clj")))))
 (defn do-modification [tree]
-  (let [[new-tree changes] ((:modify-tree robj) [tree []])]
-    new-tree))
+  (:tree ((:process-code robj) {:tree tree})))
             
 (def t0-in
 "(if pred

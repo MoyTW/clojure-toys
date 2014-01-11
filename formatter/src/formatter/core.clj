@@ -9,7 +9,7 @@
 
 (defn apply-extension [extension tree-and-changes]
   (if (:is-active extension)
-      ((:modify-tree extension) tree-and-changes)
+      ((:process-code extension) tree-and-changes)
       tree-and-changes))
   
 (defn apply-all-extensions [tree-and-changes]

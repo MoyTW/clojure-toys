@@ -6,8 +6,7 @@
 (def fpath (str (io/as-file (io/resource "extensions/comment_length.clj"))))
 (def robj (load-file fpath))
 (defn do-modification [tree]
-  (let [[new-tree changes] ((:modify-tree robj) [tree []])]
-    new-tree))
+  (:tree ((:process-code robj) {:tree tree})))
             
 (def t0-in
 ";;   This is a line of exceptional length! It should be broken into two lines! The whitespace at the end of the lines will be stripped.")

@@ -5,8 +5,7 @@
 
 (def robj (load-file (str (io/as-file (io/resource "extensions/when_not.clj")))))
 (defn do-modification [tree]
-  (let [[new-tree changes] ((:modify-tree robj) [tree []])]
-    new-tree))
+  (:tree ((:process-code robj) {:tree tree})))
             
 (def t0-in
 "(when (not pred )
