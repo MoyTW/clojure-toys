@@ -1,11 +1,11 @@
 (ns formatter.extensions.when-test
   (:require [clojure.test :refer :all]
             [formatter.parser :as par]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+			[formatter.extensions.when :as ext]))
 
-(def robj (load-file (str (io/as-file (io/resource "extensions/when.clj")))))
 (defn do-modification [tree]
-  (:tree ((:process-code robj) {:tree tree})))
+  (:tree ((:process-code ext/extension) {:tree tree})))
             
 (def t0-in
 "(if pred
