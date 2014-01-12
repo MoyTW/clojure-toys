@@ -1,11 +1,11 @@
 (ns formatter.core
   (:require [formatter.parser :as par]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+			[formatter.extensions :as exts])
   (:gen-class))
 (use '[clojure.tools.cli :only[cli]])
 
-(def files (rest (file-seq (io/as-file (io/resource "extensions")))))
-(def extensions (map #(load-file (.getAbsolutePath %)) files))
+(def extensions exts/all-extensions)
 
 (defn apply-extension [extension tree-and-changes]
   (if (:is-active extension)

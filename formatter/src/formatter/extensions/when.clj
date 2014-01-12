@@ -28,8 +28,9 @@
   (let [new-tree (fe-modify-tree tree)
         new-changes (diff-strs tree new-tree changes)]
     (assoc params :tree new-tree :changes new-changes)))
-          
-{:description "(if pred (do ...)) -> (when pred ...)"
- :url "https://github.com/bbatsov/clojure-style-guide#syntax"
- :is-active true
- :process-code process-code}
+
+(def extension
+  {:description "(if pred (do ...)) -> (when pred ...)"
+   :url "https://github.com/bbatsov/clojure-style-guide#syntax"
+   :is-active true
+   :process-code process-code})
