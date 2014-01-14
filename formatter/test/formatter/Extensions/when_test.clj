@@ -6,7 +6,7 @@
 
 (defn do-modification [tree]
   (:tree ((:process-code ext/extension) {:tree tree})))
-            
+
 (def t0-in
 "(if pred
   (do
