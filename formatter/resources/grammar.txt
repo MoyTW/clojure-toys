@@ -4,7 +4,7 @@ S = (Form)*
               | SpecialForm
     Eval = <'('> Form* <')'>
     
-    <MacroChar> = Quote | Dispatch | Comment (*TODO - | Slash | Metadata*)
+    <MacroChar> = Quote | Dispatch | Comment | Metadata (*TODO - | Slash | Metadata*)
         Quote = <"'"> NoEvalForm
             <NoEvalForm> = List | MacroChar | Symbol | Literal | Vector | Map
                 List = <'('> Form* <')'>
@@ -14,6 +14,11 @@ S = (Form)*
                 Regex = String
                 AnonFuncLit = <'('> Form* <')'>
         Comment = ";" #'[^\n]*'
+        <Metadata> = SymbolMetadata | KeywordMetadata | StringMetadata | MapMetadata
+            SymbolMetadata = "^" Symbol Form
+            KeywordMetadata = "^" Keyword Form
+            StringMetadata = "^" String Form
+            MapMetadata = "^" Map Form
     
     Symbol = #'[a-zA-Z\*\+\!\-\_\?\=<>%][a-zA-Z0-9\*\+\!\-\_\?\=\.<>%]*/?[a-zA-Z0-9\*\+\!\-\_\?\=\.<>%]*' (*TODO - implement the rules regarding dot colons and slash characters*)
     
