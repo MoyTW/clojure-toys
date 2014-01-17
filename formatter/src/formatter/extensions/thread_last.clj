@@ -2,18 +2,18 @@
   (:require [instaparse.core :as insta]
             [formatter.parser :as par]))
 
-(def ^:dynamic min-depth 3)
-(def ^:dynamic do-not-nest
-  #{"defn" "loop" "let" "if" "and" "or" "fn"})
+(def ^:dynamic *min-depth* 3)
+(def ^:dynamic *do-not-nest*
+  #{"defn" "loop" "let" "if" "and" "or" "fn" "deftest" "is" "testing"})
 
 (defn count-nesting 
   "Counts the nesting levels of the tree, excluding functions listed in the 
-  do-not-nest var."
+  *do-not-nest* var."
   [node]
   (loop [node node n 0]
     (let [node-vecs (filter #(or (vector? %) (= :Eval %)) node)]
       (cond
-        (contains? do-not-nest (second (second node-vecs)))
+        (contains? *do-not-nest* (second (second node-vecs)))
           n
         (and (= :Eval (first node-vecs)) (vector? (last node-vecs)))
           (recur (last node-vecs) (inc n))
@@ -27,7 +27,7 @@
   (* 9 2)."
   [tree]
   (if (sequential? tree)
-      (if (>= (count-nesting tree) min-depth)
+      (if (>= (count-nesting tree) *min-depth*)
           (cons tree (mapcat #(find-nested-nodes %) (next tree)))
           (mapcat #(find-nested-nodes %) (next tree)))
       nil))
@@ -44,6 +44,7 @@
 (defn process-code [{:keys [tree suggestions] :as params}]
   (->> (find-nested-nodes tree)
        (nodes-to-strings)
+       (map clojure.string/trim)
        (reduce conj suggestions)
        (assoc params :suggestions)))
 

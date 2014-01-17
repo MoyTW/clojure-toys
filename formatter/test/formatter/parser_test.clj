@@ -49,7 +49,7 @@
     (is (= (par/htree-to-str (par/parser t4-str :unhide :content))
            t4-str))))
 
-(def result-74-75 (par/parser (slurp "test/resources/74_75.clj")))
+(def result-74-75 (par/parser (slurp "test/resources/74_75.txt")))
 (if (insta/failure? result-74-75) (prn result-74-75))
 (deftest test-74-75
   (testing "Tests that it parses my solution to 4Clojure 74-75"
