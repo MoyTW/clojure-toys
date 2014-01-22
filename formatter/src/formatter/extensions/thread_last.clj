@@ -3,22 +3,35 @@
             [formatter.parser :as par]))
 
 (def ^:dynamic *min-depth* 3)
+(def ^:dynamic *max-nonlast-depth* 2)
 (def ^:dynamic *do-not-nest*
   #{"defn" "loop" "let" "if" "and" "or" "fn" "deftest" "is" "testing"})
 
-(defn count-nesting 
+; Kind of ugly with that double-if, but hey.
+(defn count-nonlast-nesting
+  "Counts the nesting level of the function node"
+  [tree]
+  (let [tree-vecs (filter #(and (vector? %) (= (first %) :Eval)) tree)]
+    (if (> (count tree-vecs) 0)
+        (inc (apply max (map count-nonlast-nesting tree-vecs)))
+        1)))
+
+(defn count-last-nesting 
   "Counts the nesting levels of the tree, excluding functions listed in the 
   *do-not-nest* var."
   [node]
-  (loop [node node n 0]
-    (let [node-vecs (filter #(or (vector? %) (= :Eval %)) node)]
+  (loop [node node n 0 nonlast-n 0]
+    (let [node-vecs (filter vector? node)]
       (cond
-        (contains? *do-not-nest* (second (second node-vecs)))
-          n
-        (and (= :Eval (first node-vecs)) (vector? (last node-vecs)))
-          (recur (last node-vecs) (inc n))
+        (contains? *do-not-nest* (second (first node-vecs)))
+          [n nonlast-n]
+        (and (= :Eval (first node)) (vector? (last node-vecs)))
+          (recur (last node-vecs) 
+                 (inc n) 
+                 (max nonlast-n
+                      (count-nonlast-nesting (butlast (rest node-vecs)))))
         :else
-          n))))
+          [n nonlast-n]))))
 
 (defn find-nested-nodes
   "Finds nodes with a thread-last nesting level greater than or equal to n. 
@@ -27,9 +40,13 @@
   (* 9 2)."
   [tree]
   (if (sequential? tree)
-      (if (>= (count-nesting tree) *min-depth*)
-          (cons tree (mapcat #(find-nested-nodes %) (next tree)))
-          (mapcat #(find-nested-nodes %) (next tree)))
+      (let [[nesting nonlast-nesting] (count-last-nesting tree)]
+        (if (and (<= nonlast-nesting *max-nonlast-depth*)
+                 (>= nesting *min-depth*))
+            (let [last-of-tree (last (filter vector? tree))
+                  result (mapcat find-nested-nodes (next tree))]
+              (cons tree (remove #(= last-of-tree %) result)))
+            (mapcat #(find-nested-nodes %) (next tree))))
       nil))
 
 (defn nodes-to-strings
