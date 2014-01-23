@@ -7,7 +7,6 @@
 (def ^:dynamic *do-not-nest*
   #{"defn" "loop" "let" "if" "and" "or" "fn" "deftest" "is" "testing"})
 
-; Kind of ugly with that double-if, but hey.
 (defn count-nonlast-nesting
   "Counts the nesting level of the function node"
   [tree]
@@ -25,11 +24,11 @@
       (cond
         (contains? *do-not-nest* (second (first node-vecs)))
           [n nonlast-n]
-        (and (= :Eval (first node)) (vector? (last node-vecs)))
+        (and (= :Eval (first node)))
           (recur (last node-vecs) 
                  (inc n) 
                  (max nonlast-n
-                      (count-nonlast-nesting (butlast (rest node-vecs)))))
+                      (count-nonlast-nesting (butlast node-vecs))))
         :else
           [n nonlast-n]))))
 
@@ -39,15 +38,13 @@
   vector of two elements containing trees representing (+3 (* 9 2)) and 
   (* 9 2)."
   [tree]
-  (if (sequential? tree)
-      (let [[nesting nonlast-nesting] (count-last-nesting tree)]
-        (if (and (<= nonlast-nesting *max-nonlast-depth*)
-                 (>= nesting *min-depth*))
-            (let [last-of-tree (last (filter vector? tree))
-                  result (mapcat find-nested-nodes (next tree))]
-              (cons tree (remove #(= last-of-tree %) result)))
-            (mapcat #(find-nested-nodes %) (next tree))))
-      nil))
+  (let [[nesting nonlast-nesting] (count-last-nesting tree)
+        tree-nodes (filter vector? tree)
+        result (mapcat find-nested-nodes tree-nodes)]
+    (if (and (<= nonlast-nesting *max-nonlast-depth*)
+             (>= nesting *min-depth*))
+        (cons tree (remove #(= (last tree-nodes) %) result))
+        (mapcat find-nested-nodes tree-nodes))))
 
 (defn nodes-to-strings
   "Takes a vector or nodes and returns a vector of strings."
