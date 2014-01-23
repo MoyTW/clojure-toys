@@ -92,3 +92,7 @@
       (testing "Checks to see that rebound do-not-nest excludes."
         (is (not
           (contains? binding-suggestions "(html/defsnippet")))))))
+
+(deftest single-form
+  (testing "Testing that it doesn't explode when passed a single form."
+    (is (= 0 (count (get-suggestions ":a"))))))
