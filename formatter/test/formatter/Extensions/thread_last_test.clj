@@ -4,10 +4,11 @@
 			[formatter.extensions.thread-last :as ext]))
 
 (defn get-suggestions [code]
-  (:suggestions 
-    ((:process-code ext/extension) 
-      {:tree (par/parser code) 
-       :suggestions []})))
+  (map :code
+       (:suggestions 
+         ((:process-code ext/extension) 
+           {:tree (par/parser code) 
+           :suggestions []}))))
 (defn set-of-first [suggestions]
   (set (map #(first (clojure.string/split % #" ")) suggestions)))
 

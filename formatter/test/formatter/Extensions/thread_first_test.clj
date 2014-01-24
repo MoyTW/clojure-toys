@@ -4,10 +4,11 @@
 			[formatter.extensions.thread-first :as ext]))
 
 (defn get-suggestions [code]
-  (:suggestions 
-    ((:process-code ext/extension) 
-      {:tree (par/parser code) 
-       :suggestions []})))
+  (map :code
+       (:suggestions 
+         ((:process-code ext/extension) 
+           {:tree (par/parser code) 
+           :suggestions []}))))
 
 (def from-clojuredocs "(first (.split (.replace (.toUpperCase \"a b c d\") \"A\" \"X\") \" \"))")
 (deftest clojuredocs-example
