@@ -11,8 +11,7 @@
 "(if pred
   (do
     (foo)
-    (bar))
-       )")
+    (bar)))")
 (def t0-out
 "(when pred
     (foo)
@@ -51,13 +50,14 @@
 
 (when pred
     (foo)
-    (bar))")
+    (bar)
+       )")
 (def map-2 {:in (par/parser t2-in :unhide :content) 
             :out (par/parser t2-out :unhide :content)})
 (deftest test-pre-whitespace
   (testing "Tests that it maintains whitespace before the statement"
-    (is (= (par/htree-to-str (do-modification(:in map-2)))
-           (par/htree-to-str (:out map-2))))))
+    (is (= (do-modification(:in map-2))
+           (:out map-2)))))
            
 (def t3-in
 "(if (= 3
@@ -72,13 +72,14 @@
         :a
         19)
  (foo)
-   (bar))")
+   (bar)
+       )")
 (def map-3 {:in (par/parser t3-in :unhide :content) 
             :out (par/parser t3-out :unhide :content)})
 (deftest test-more-spacing
   (testing "Tests that it keeps parameters on different lines (doesn't indent)"
-    (is (= (par/htree-to-str (do-modification(:in map-3)))
-           (par/htree-to-str (:out map-3))))))
+    (is (= (do-modification(:in map-3))
+           (:out map-3)))))
 
 (def t4-in "(if p (do :a :b))")
 (def t4-out "(when p :a :b)")
@@ -86,5 +87,5 @@
             :out (par/parser t4-out :unhide :content)})
 (deftest test-symbol-spacing
   (testing "Tests that it doesn't eat spaces in the do loop if it's on a single line"
-    (is (= (par/htree-to-str (do-modification(:in map-4)))
-           (par/htree-to-str (:out map-4))))))
+    (is (= (do-modification(:in map-4))
+           (:out map-4)))))
