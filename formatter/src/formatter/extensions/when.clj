@@ -3,15 +3,29 @@
             [clojure.data :as data]
             [formatter.parser :as par]))
 
+(defn replace-nodes
+  "Replaces nodes within a (if pred (do ... )) node. Changes the [if] to a 
+  [when] and pulls the body of the [do] up one level on the tree."
+  [if-node do-node node]
+  (letfn [(compare-node [node]
+            (condp = node
+              if-node [[:Symbol "when"]]
+              do-node (->> (rest node)
+                      (drop-while string?)
+                      (remove #{"(" ")" [:Symbol "do"]})
+                      (into []))
+                [node]))]
+    (mapcat compare-node node)))
+
 (defn replace-when-not [& args]
-  (let [[pre-strs main-vec] (split-with string? args)
-        [if-vec pred-vec do-vec & dne] (filter vector? main-vec)
-        [do-key do-sym-vec & more] (filter #(or (vector? %) (keyword? %)) do-vec)]
-    (if (and (= nil dne) 
-             (= if-vec [:Symbol "if"]) 
-             (= do-key :Eval) 
-             (= do-sym-vec [:Symbol "do"]))
-        (->> (concat pre-strs [[:Symbol "when"] " " pred-vec] more [")"])
+  (let [[if-node pred-node do-node & dne] (filter vector? args)
+        do-vecs (filter vector? do-node)]
+    (if (and (= nil dne)
+             (= if-node [:Symbol "if"])
+             (= (first do-node) :Eval)
+             (= (first do-vecs) [:Symbol "do"]))
+        (->> args
+             (replace-nodes if-node do-node)
              (cons :Eval)
              (into []))
         (into [] (cons :Eval args)))))
