@@ -20,7 +20,10 @@ S = (Form)*
             StringMetadata = "^" String Form
             MapMetadata = "^" Map Form
     
-    Symbol = #'[a-zA-Z\*\+\!\-\_\?\=<>%][a-zA-Z0-9\*\+\!\-\_\?\=\.<>%]*/?[a-zA-Z0-9\*\+\!\-\_\?\=\.<>%]*' (*TODO - implement the rules regarding dot colons and slash characters*)
+    Symbol = Division | Custom
+        <Division> = '/'
+        <Custom> = #'[a-zA-Z\*\+\!\-\_\?\=<>%][a-zA-Z0-9\*\+\!\-\_\?\=\.<>%]*/?[a-zA-Z0-9\*\+\!\-\_\?\=\.<>%]*' 
+                   (*TODO - implement the rules regarding dot colons and slash characters*)
     
     <Literal> = String | Number | Character | Boolean | Keyword | 'nil'
         String = <'"'>#'(\\\"|[^"])*'<'"'> (*Matches \\\" or any char not \"*)
@@ -36,5 +39,6 @@ S = (Form)*
     Vector = <'['> Form* <']'>
     Map = <'{'> (Form Form)* <'}'>
     
-    <SpecialForm> = JConstructor
-        JConstructor = Form '.' Form*
+    <SpecialForm> = JavaMemberAccess | JavaConstructor
+        JavaMemberAccess = '.' Symbol Form*
+        JavaConstructor = Form '.' Form*
