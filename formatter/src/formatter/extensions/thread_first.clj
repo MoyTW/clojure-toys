@@ -45,19 +45,17 @@
         (cons tree (remove #(= (second tree-nodes) %) result))
         (mapcat find-nested-nodes tree-nodes))))
 
-(defn nodes-to-strings
-  "Takes a vector or nodes and returns a vector of strings."
-  [nodes]
-  (map #(->> %
-             (flatten)
-             (filter string?)
-             (apply str))
-        nodes))
+(defn node-to-suggestion
+  "Takes a node and turns it into a suggestion map."
+  [node]
+  (->> node
+       (par/htree-to-str)
+	   (clojure.string/trim)
+	   (hash-map :code)))
 
 (defn process-code [{:keys [tree suggestions] :as params}]
   (->> (find-nested-nodes tree)
-       (nodes-to-strings)
-       (map clojure.string/trim)
+       (map node-to-suggestion)
        (reduce conj suggestions)
        (assoc params :suggestions)))
 
