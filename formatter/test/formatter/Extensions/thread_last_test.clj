@@ -86,7 +86,7 @@
            (count (get-suggestions long-chain))))))
 
 ;; Test to see whether we can rebind *do-not-nest*
-(binding [ext/*do-not-nest* (conj ext/*do-not-nest* "html/defsnippet")]
+#_(binding [ext/*do-not-nest* (conj ext/*do-not-nest* "html/defsnippet")]
   (let [binding-suggestions (set-of-first (get-suggestions code-styler))]
 
     (deftest binding-exclusion

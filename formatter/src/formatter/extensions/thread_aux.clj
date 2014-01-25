@@ -24,3 +24,35 @@
                       (count-nesting (remove #{(position params)}
 					                         params))))
           [n nonpos-n]))))
+
+(defn find-nested-nodes
+  "Finds nodes with a thread-last nesting level greater than or equal to n. 
+  For example, for n=1 and a tree parsed from (+ 3 (* 9 2)) it would return a 
+  vector of two elements containing trees representing (+3 (* 9 2)) and 
+  (* 9 2)."
+  [env-vars-map tree]
+  (let [{:keys [min-depth
+                max-branch-depth
+				do-not-nest
+				selection-function]} env-vars-map
+        [nesting nonpos-nesting] (count-pos-nesting do-not-nest selection-function tree)
+        [fnode & params :as tree-nodes] (filter vector? tree)
+        result (mapcat #(find-nested-nodes env-vars-map %) tree-nodes)]
+    (if (and (<= nonpos-nesting max-branch-depth)
+             (>= nesting min-depth))
+        (cons tree (remove #{(selection-function params)} result))
+        result)))
+
+(defn node-to-suggestion
+  "Takes a node and turns it into a suggestion map."
+  [node]
+  (->> node
+       (par/htree-to-str)
+	   (clojure.string/trim)
+	   (hash-map :code)))
+
+(defn process-code [threading-params {:keys [tree suggestions] :as params}]
+  (->> (find-nested-nodes threading-params tree)
+       (map node-to-suggestion)
+       (reduce conj suggestions)
+       (assoc params :suggestions)))
