@@ -54,3 +54,9 @@
 (deftest test-74-75
   (testing "Tests that it parses my solution to 4Clojure 74-75"
     (is (not (insta/failure? result-74-75)))))
+
+(def files-2014-01-24 (map (comp par/parser slurp) (rest (file-seq (clojure.java.io/file "test/resources/2014_01_24")))))
+(prn (filter insta/failure? files-2014-01-24))
+(deftest test-formatter-files
+  (testing "Tests that it parses formatter files as of 2014-01-24"
+    (is (every? false? (map insta/failure? files-2014-01-24)))))
