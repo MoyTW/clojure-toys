@@ -44,7 +44,8 @@
     (assoc params :tree new-tree :changes new-changes)))
 
 (def extension
-  {:description "(if pred (do ...)) -> (when pred ...)"
+  {:name "when"
+   :description "(if pred (do ...)) -> (when pred ...)"
    :url "https://github.com/bbatsov/clojure-style-guide#syntax"
    :is-active true
    :process-code process-code})

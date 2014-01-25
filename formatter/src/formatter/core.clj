@@ -18,8 +18,20 @@
                             extensions)]
     (assoc result-tree :text (par/htree-to-str (:tree result-tree)))))
 
+(defn get-threading-suggestions
+  "Runs the threading extensions on the code in a file and prints the results."
+  [uri]
+  (let [code-tree (par/parser (slurp uri))
+        thread-exts (filter #(#{"thread-last" "thread-first"} (:name %))
+		                             extensions)
+		suggestions (:suggestions 
+		              (reduce (fn [t n] (apply-extension n t))
+                              {:tree code-tree :changes [] :suggestions []}
+                              thread-exts))]
+	(doall (map println suggestions))))
+
 (defn -main
-  "I don't do a whole lot ... yet."
+  "Use -i -o for input/output files."
   [& args]
   (let [[p-map p-trailing p-docstr] 
           (cli args 

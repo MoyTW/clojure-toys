@@ -10,7 +10,8 @@
    :do-not-nest #{"defn" "loop" "let" "if" "and" "or" "fn" "deftest" "is" "testing"}})
 
 (def extension
-  {:description "thread-last adds to suggestions possible locations to use ->>"
+  {:name "thread-last"
+   :description "thread-last adds to suggestions possible locations to use ->>"
    :url ""
    :is-active true
    :process-code #(thread/process-code *threading-params* %)})

@@ -25,7 +25,8 @@
     (assoc params :tree new-tree :changes new-changes)))
 
 (def extension
-  {:description "Use when-not instead of (when (not ...) ...)."
+  {:name "when-not"
+   :description "Use when-not instead of (when (not ...) ...)."
    :url "https://github.com/bbatsov/clojure-style-guide#syntax"
    :is-active true
    :process-code process-code})

@@ -10,7 +10,8 @@
    :selection-function first})
 
 (def extension
-  {:description "thread-first adds to suggestions possible locations to use ->"
+  {:name "thread-first"
+   :description "thread-first adds to suggestions possible locations to use ->"
    :url ""
    :is-active true
    :process-code #(thread/process-code *threading-params* %)})

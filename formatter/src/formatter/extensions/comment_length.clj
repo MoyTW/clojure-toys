@@ -44,7 +44,8 @@
     (assoc params :tree new-tree :changes new-changes)))
 
 (def extension
-  {:description "Breaks comments to 80 lines."
+  {:name "comment-length"
+   :description "Breaks comments to 80 lines."
    :url "https://github.com/bbatsov/clojure-style-guide#source-code-layout--organization"
    :is-active true
    :process-code process-code})
