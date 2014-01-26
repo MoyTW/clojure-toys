@@ -4,10 +4,10 @@
 			[formatter.extensions.thread-aux :as thread]))
 
 (def ^:dynamic *threading-params*
-  {:min-depth 3
+  {:thread-pred first
+   :min-depth 3
    :max-branch-depth 2
-   :do-not-nest #{}
-   :selection-function first})
+   :do-not-nest #{}})
 
 (def extension
   {:name "thread-first"

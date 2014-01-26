@@ -4,7 +4,7 @@
 			[formatter.extensions.thread-aux :as thread]))
 
 (def ^:dynamic *threading-params*
-  {:selection-function last
+  {:thread-pred last
    :min-depth 3
    :max-branch-depth 2
    :do-not-nest #{"defn" "loop" "let" "if" "and" "or" "fn" "deftest" "is" "testing"}})
