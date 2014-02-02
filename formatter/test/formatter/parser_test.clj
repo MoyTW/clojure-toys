@@ -60,3 +60,15 @@
 (deftest test-formatter-files
   (testing "Tests that it parses formatter files as of 2014-01-24"
     (is (every? false? (map insta/failure? files-2014-01-24)))))
+
+(def compojure-snippets (par/parser (slurp "test/resources/compojure_snippets.txt")))
+(if (insta/failure? compojure-snippets) (prn compojure-snippets))
+(deftest test-compojure-snippets
+  (testing "Tests snippets from compojure"
+    (is (not (insta/failure? compojure-snippets)))))
+
+(def lein-compile (par/parser (slurp "test/resources/lein_compile_source.txt")))
+(if (insta/failure? lein-compile) (prn lein-compile))
+(deftest test-lein-compile-source
+  (testing "Tests lein-compile."
+    (is (not (insta/failure? lein-compile)))))
