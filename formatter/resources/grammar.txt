@@ -1,44 +1,69 @@
-S = (Form)*
+S = Form*
 
-<Form> = Eval | MacroChar | Symbol | Literal | Vector | Map (*List requires the quote macro: Set requires the Dispatch macro*) (*'Regular' Forms*)
-              | SpecialForm
-    Eval = <'('> Form* <')'>
+<Destructuring> = VectorDestructuring | MapDestructuring
+    VectorDestructuring = '[' (Symbol | Destructuring)* ('&' (Symbol | Destructuring))? (':as' Symbol)? ']'
+    MapDestructuring = Map
+
+<Form> = !SpecialForm List | ReaderMacro | Literal | Vector | Map | 
+         SpecialForm | !SpecialForm Symbol
     
-    <MacroChar> = Quote | Dispatch | Comment | Metadata (*TODO - | Slash | Metadata*)
-        Quote = <"'"> NoEvalForm
-            <NoEvalForm> = List | MacroChar | Symbol | Literal | Vector | Map
-                List = <'('> Form* <')'>
-        Dispatch = <'#'> ReaderMacro
-            <ReaderMacro> = Set | Regex | AnonFuncLit (*TODO - | VarQuote | IgnoreForm*)
-                Set = <'{'> Form* <'}'>
+    List = '(' Form* ')'
+    
+    <ReaderMacro> = Quote | SyntaxQuote | Var | Dispatch | Comment | Metadata | 
+                    QuotedInternal (*TODO - Slash*)
+        Quote = "'" Form
+        SyntaxQuote = '`' Form
+        Dispatch = '#' DispatchMacro
+            <DispatchMacro> = Set | Var | Regex | AnonFuncLit (*TODO - IgnoreForm*)
+                Set = '{' Form* '}'
+                Var = "'" Form
                 Regex = String
-                AnonFuncLit = <'('> Form* <')'>
-        Comment = ";" #'[^\n]*'
+                AnonFuncLit = '(' Form* ')'
+        Comment = ';' #'[^\n]*'
         <Metadata> = SymbolMetadata | KeywordMetadata | StringMetadata | MapMetadata
             SymbolMetadata = "^" Symbol Form
             KeywordMetadata = "^" Keyword Form
             StringMetadata = "^" String Form
             MapMetadata = "^" Map Form
-    
+        <QuotedInternal> = Unquote | UnquoteSplice | GenSym
+            Unquote = '~' Form (*TODO - This should ONLY be used INSIDE a quoted form!*)
+            UnquoteSplice = '~@' Form (*TODO - This should ONLY be used INSIDE a quoted form!*)
+            GenSym = Symbol '#' (*TODO - This should ONLY be used INSIDE a quoted form!*)
+
     Symbol = Division | Custom
         <Division> = '/'
-        <Custom> = #'[a-zA-Z\*\+\!\-\_\?\=<>%][a-zA-Z0-9\*\+\!\-\_\?\=\.<>%]*/?[a-zA-Z0-9\*\+\!\-\_\?\=\.<>%]*' 
-                   (*TODO - implement the rules regarding dot colons and slash characters*)
+        <Custom> = #'[a-zA-Z\*\+\!\-\_\?\=<>%&][a-zA-Z0-9\*\+\!\-\_\?\=\.<>%&]*/?[a-zA-Z0-9\*\+\!\-\_\?\=\.<>%&]*'
     
-    <Literal> = String | Number | Character | Boolean | Keyword | 'nil'
-        String = <'"'>#'(\\\"|[^"])*'<'"'> (*Matches \\\" or any char not \"*)
+    (*Symbol = Slash | Name ('/' Name)?
+        <Slash> = '/'
+        <Name> = NameHead NameRest* (':' NameRest+)*
+            <NameHead> = #'[a-zA-Z]' | '*' | '+' | '!' | '-' | '_' | '?' | 
+                         '>' | '<' | '=' | '$'
+            <NameRest> = NameHead | #'[0-9]' | '&' | '.'*)
+
+    <Literal> = String | Number | Character | Boolean | Keyword | NilLiteral
+        String = '"' #'(\\\"|[^"])*' '"' (*Matches \\\" or any char not \"*)
         <Number> = Integer | Float | Ratio (* TODO - add in support for hex/oct forms*)
             Integer = #'[+-]?[0-9]+r?[0-9]*' (*The r is so you can do 8r52 - 8 radix 52*)
             Float = #'[+-]?([0-9]*\.[0-9]+|[0-9]+\.[0-9]*)' | (*Decimal form*)
                     #'[+-]?[0-9]+\.?[0-9]*e[+-]?[0-9]+' (*Exponent form*)
             Ratio = #'[+-]?[0-9]+/[0-9]+'
-        Character = #'\\.' | '\\newline' | '\\space' | '\\tab' | '\\formfeed' | '\\backspace' | '\\return' (* TODO - add in support for unicode character representations!*)
+        Character = #'\\.' | '\\newline' | '\\space' | '\\tab' | '\\formfeed' |
+                    '\\backspace' | '\\return'
+                    (* TODO - add in support for unicode character representations!*)
         Boolean = 'true' | 'false'
         Keyword = #'::?[a-zA-Z0-9\*\+\!\-\_\?]*'
+        NilLiteral = 'nil'
+        
+    Vector = '[' Form* ']'
+    Map = '{' (Form Form)* '}'
     
-    Vector = <'['> Form* <']'>
-    Map = <'{'> (Form Form)* <'}'>
-    
-    <SpecialForm> = JavaMemberAccess | JavaConstructor
+    <SpecialForm> = defn | let | try | JavaMemberAccess | JavaConstructor
+        defn = '(' "defn" Symbol String? MapMetadata? VectorDestructuring Form* ')'
+        let = '(' "let" LetBinding Form* ')'
+            LetBinding = '[' ((Symbol | Destructuring) Form)* ']'
+        try = '(' "try" Form* CatchClause* FinallyClause? ')'
+            CatchClause = '(' "catch" Symbol Symbol Form* ')'
+            FinallyClause = '(' "finally" Form* ')'
         JavaMemberAccess = '.' Symbol Form*
         JavaConstructor = Form '.' Form*

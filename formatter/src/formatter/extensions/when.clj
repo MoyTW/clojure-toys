@@ -22,16 +22,16 @@
         do-vecs (filter vector? do-node)]
     (if (and (= nil dne)
              (= if-node [:Symbol "if"])
-             (= (first do-node) :Eval)
+             (= (first do-node) :List)
              (= (first do-vecs) [:Symbol "do"]))
         (->> args
              (replace-nodes if-node do-node)
-             (cons :Eval)
+             (cons :List)
              (into []))
-        (into [] (cons :Eval args)))))
+        (into [] (cons :List args)))))
         
 (defn fe-modify-tree [tree]
-  (insta/transform {:Eval replace-when-not} tree))
+  (insta/transform {:List replace-when-not} tree))
 
 (defn diff-strs [pre-tree post-tree changes]
   (reduce #(conj %1 (str "Character: " %2 " - Changed (if ... (do ...)) to (when ...)"))

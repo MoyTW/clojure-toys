@@ -5,7 +5,7 @@
 (defn count-nesting
   "Counts the nesting level of the function node"
   [tree]
-  (let [tree-vecs (filter #(and (vector? %) (= (first %) :Eval)) tree)]
+  (let [tree-vecs (filter #(and (vector? %) (= (first %) :List)) tree)]
     (if (> (count tree-vecs) 0)
         (inc (apply max (map count-nesting tree-vecs)))
         1)))
@@ -16,7 +16,7 @@
   [{:keys [do-not-nest thread-pred]} node]
   (loop [node node n 0 nonpos-n 0]
     (let [[[_ fname] & params] (filter vector? node)]
-      (if (and (= :Eval (first node))
+      (if (and (= :List (first node))
           (not (contains? do-not-nest fname)))
           (recur (thread-pred params)
                  (inc n) 

@@ -12,12 +12,12 @@
     (if (and (= first-symbol "when") (= second-symbol "not"))
         (->> more
             (concat pre-strs [[:Symbol "when-not"]] pred-ws [pred])
-            (cons :Eval)
+            (cons :List)
             (into []))
-        (into [] (cons :Eval args)))))
+        (into [] (cons :List args)))))
     
 (defn fe-modify-tree [tree]
-  (insta/transform {:Eval replace-when-not} tree))
+  (insta/transform {:List replace-when-not} tree))
 
 (defn process-code [{:keys [tree changes suggestions] :as params}]
   (let [new-tree (fe-modify-tree tree)
