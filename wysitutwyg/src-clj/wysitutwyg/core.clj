@@ -1,15 +1,15 @@
 (ns wysitutwyg.core
   (:use compojure.core
-        wysitutwyg.views
         ring.middleware.reload
         ring.middleware.stacktrace)
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
-            [compojure.response :as response]))
+            [compojure.response :as response]
+            [wysitutwyg.routes.landing :as landing]))
 
 (defroutes main-routes
-  (GET "/" [] (index-page))
-  (route/resources "/")
+  landing/routes
+  (route/resources "/res")
   (route/not-found "Page not found"))
 
 (def app
