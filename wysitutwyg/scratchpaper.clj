@@ -13,13 +13,18 @@
 {"He" {"is" 2},
  "is" {"a" 2, "sad" 2}}
 
-(defn snip-space [coll]
-  (drop-while #(= \space %) coll))
+(def delimiters #{\space})
+ 
+(defn not-delimiter? [char]
+  (not (delimiters char)))
+ 
+(defn snip-delimiters [coll]
+  (drop-while delimiters coll))
 
 (defn parse-counts [coll]
   (loop [counts {} corpus coll]
-    (let [[word rest-corpus] (split-with #(not= \space %) (snip-space corpus))
-          follows (take-while #(not= \space %) (snip-space rest-corpus))]
+    (let [[word rest-corpus] (split-with not-delimiter? (snip-delimiters corpus))
+          follows (take-while not-delimiter? (snip-delimiters rest-corpus))]
       (if (seq rest-corpus)
           (recur (update-in counts [word follows] (fnil inc 0)) rest-corpus)
           counts))))
@@ -86,3 +91,12 @@ Or to thyself at least kind-hearted prove:
       (recur (conj out next-word) next-word)
       out)))
 (clojure.string/join \space (map #(apply str %) (chain [\t \h \e] counts)))
+(clojure.string/join \space (take 130 (map #(apply str %) (chain [\W \h \e \n] counts))))
+
+(defn lazy-chain [start-word counts]
+  (if-let [next-word (pick-word (counts start-word))]
+    (cons start-word (lazy-seq (lazy-chain next-word counts)))))
+
+(def sonnets-text (slurp "F:/aP-Personal_Projects/Clojure/wysitutwyg/resources/sonnets.txt"))
+(def sonnets (parse-counts sonnets-text))
+(clojure.string/join \space (take 130 (map #(apply str %) (lazy-chain [\W \h \e \n] sonnets))))
