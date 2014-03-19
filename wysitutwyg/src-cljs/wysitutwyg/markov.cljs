@@ -1,10 +1,18 @@
-;; Fixes seed for reproducability
-(def ^:dynamic ^java.util.Random *rnd* (java.util.Random. 1))
-(defn get-rand [x]
-  (.nextInt *rnd* x))
+(ns wysitutwyg.markov)
 
-;; Delimiters set
-(def delimiters #{\space \newline})
+(def seed 1)
+
+(def crand (atom seed))
+
+(defn get-rand
+  "Uses crand to generate a semi-random number in the range 0...n, using an 
+  algorithm of dubious randomness and probably uneven distribution from:
+  http://stackoverflow.com/questions/521295/javascript-random-seeds"
+  [n]
+  (let [x (* (.sin js/Math (swap! crand inc)) 10000)]
+    (->> (.floor js/Math x) (- x) (* n) (.floor js/Math))))
+
+(def delimiters #{\space})
 
 (defn not-delimiter? [char]
   (not (delimiters char)))
@@ -54,4 +62,5 @@
        (apply conj (->> counts
                         (lazy-chain (map seq state))
                         (take n)))
-       (clojure.string/join \space)))
+       (interpose \space)
+       (apply str)))
