@@ -9,9 +9,11 @@
 (defn not-word-delim? [char]
   (not (word-delimiters char)))
   
-(defn seed-from-sentence ;; TODO: Something better than literally count.
+(defn seed-from-sentence
+  "Takes a string and maps it to an integer by summing the unicode character
+  codes of the characters in the string."
   [sentence]
-  (count sentence))
+  (reduce + (map #(.charCodeAt % 0) sentence)))
 
 (defn break-text
   "Breaks a text by pred, much like C#'s split."
