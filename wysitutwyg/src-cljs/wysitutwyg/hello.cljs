@@ -1,7 +1,8 @@
 (ns wysitutwyg.hello
-  (:require [wysitutwyg.markov :as markov]))
+  (:require [wysitutwyg.textgen :as textgen]
+            [wysitutwyg.markov :as markov]))
 
-(def sonnet-counts (markov/parse-counts 1
+(def sonnet-counts (markov/parse-counts 2
 "When I have seen by Time's fell hand defaced
 The rich proud cost of outworn buried age;
 When sometime lofty towers I see down-razed,
@@ -29,7 +30,11 @@ Shall hate be fairer lodged than gentle love?
 Be, as thy presence is, gracious and kind,
 Or to thyself at least kind-hearted prove:
    Make thee another self for love of me,
-   That beauty still may live in thine or thee."))
+   That beauty still may live in thine or thee."))  
 
 (defn create-sonnet []
-  (do (js/alert (markov/generate-text ["Time"] 30 sonnet-counts))))
+  (do 
+    (js/alert 
+      (textgen/gen-from-text 
+        (.-value (.getElementById js/document "inputtext")) 
+        sonnet-counts))))

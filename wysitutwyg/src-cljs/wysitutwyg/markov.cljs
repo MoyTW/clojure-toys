@@ -1,15 +1,15 @@
 (ns wysitutwyg.markov)
 
-(def seed 1)
+(def default-seed 1)
 
-(def crand (atom seed))
+(def ^:dynamic *c-rand* (atom default-seed))
 
 (defn get-rand
-  "Uses crand to generate a semi-random number in the range 0...n, using an 
+  "Uses c-rand to generate a semi-random number in the range 0...n, using an 
   algorithm of dubious randomness and probably uneven distribution from:
   http://stackoverflow.com/questions/521295/javascript-random-seeds"
   [n]
-  (let [x (* (.sin js/Math (swap! crand inc)) 10000)]
+  (let [x (* (.sin js/Math (swap! *c-rand* inc)) 10000)]
     (->> (.floor js/Math x) (- x) (* n) (.floor js/Math))))
 
 (def delimiters #{\space})
@@ -59,6 +59,7 @@
   has been reached."
   [state n counts]
   (->> (reverse state)
+       (map #(apply str %))
        (apply conj (->> counts
                         (lazy-chain (map seq state))
                         (take n)))
