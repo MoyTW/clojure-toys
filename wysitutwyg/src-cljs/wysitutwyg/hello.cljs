@@ -32,9 +32,12 @@ Or to thyself at least kind-hearted prove:
    Make thee another self for love of me,
    That beauty still may live in thine or thee."))  
 
+(defn by-id
+  "Utility function for getElementById."
+  [id]
+  (.getElementById js/document id))
+   
 (defn create-sonnet []
-  (do 
-    (js/alert 
-      (textgen/gen-from-text 
-        (.-value (.getElementById js/document "inputtext")) 
-        sonnet-counts))))
+  (let [output (textgen/gen-from-text (.-value (by-id "inputtext"))
+                                      sonnet-counts)]
+    (set! (.-value (by-id "outputtext")) output)))

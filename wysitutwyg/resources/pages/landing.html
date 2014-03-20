@@ -12,6 +12,12 @@
             margin-right:25px;
             border:dotted;
         }
+        .text {
+          height: 200px;
+          width: 75%;
+          margin-left:auto;
+          margin-right:auto;
+        }
     </style>
     
     <body>
@@ -19,9 +25,8 @@
           <h1>Clojurescript Test! Wait. What?</h1>
         </div>
         <h1>Input:</h1>
-        <textarea id="inputtext" class="input" row="10" cols="30"></textarea>
-        <button onclick="wysitutwyg.hello.create_sonnet()">Click to generate a sonnet!</button>
+        <textarea onchange="wysitutwyg.hello.create_sonnet()" id="inputtext" class="text"></textarea>
         <h1>Output:</h1>
-        <textarea id="outputtext" class="output" row="10" cols="30"></textarea>
+        <textarea id="outputtext" class="text"></textarea>
     </body>
 </html>
