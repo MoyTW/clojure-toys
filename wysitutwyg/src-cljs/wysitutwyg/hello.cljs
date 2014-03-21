@@ -1,43 +1,31 @@
 (ns wysitutwyg.hello
   (:require [wysitutwyg.textgen :as textgen]
-            [wysitutwyg.markov :as markov]))
+            [wysitutwyg.markov :as markov]
+            [clojure.browser.net :as net]
+            [goog.net.XhrIo :as xhrio]))
 
-(def sonnet-counts (markov/parse-counts 2
-"When I have seen by Time's fell hand defaced
-The rich proud cost of outworn buried age;
-When sometime lofty towers I see down-razed,
-And brass eternal slave to mortal rage;
-When I have seen the hungry ocean gain
-Advantage on the kingdom of the shore,
-And the firm soil win of the watery main,
-Increasing store with loss, and loss with store;
-When I have seen such interchange of state,
-Or state itself confounded to decay;
-Ruin hath taught me thus to ruminate
-That Time will come and take my love away.
-   This thought is as a death which cannot choose
-   But weep to have that which it fears to lose.
-For shame deny that thou bear'st love to any,
-Who for thy self art so unprovident.
-Grant, if thou wilt, thou art beloved of many,
-But that thou none lov'st is most evident:
-For thou art so possessed with murderous hate,
-That 'gainst thy self thou stick'st not to conspire,
-Seeking that beauteous roof to ruinate
-Which to repair should be thy chief desire.
-O! change thy thought, that I may change my mind:
-Shall hate be fairer lodged than gentle love?
-Be, as thy presence is, gracious and kind,
-Or to thyself at least kind-hearted prove:
-   Make thee another self for love of me,
-   That beauty still may live in thine or thee."))  
+(def interval 2000)
+
+(def self-url (str (.-protocol (.-location js/window)) "//" (.-host (.-location js/window))))
+
+(def corpus-counts (atom ""))
+
+;; bah! This parsing action takes too long. Parse it on the server, and provide it as a resource!
+(defn set-corpus-counts [corpus]
+  (reset! corpus-counts (markov/parse-counts 2 corpus)))
 
 (defn by-id
   "Utility function for getElementById."
   [id]
   (.getElementById js/document id))
    
-(defn create-sonnet []
+;; Unreasonably slow with a corpus of any non-trivial size.
+(defn create-sonnet [counts]
   (let [output (textgen/gen-from-text (.-value (by-id "inputtext"))
-                                      sonnet-counts)]
+                                      counts)]
     (set! (.-value (by-id "outputtext")) output)))
+
+;; Retrieves the text of the corpus from the server
+(xhrio/send (str self-url "/res/corpora/sonnets.txt") #(set-corpus-counts (.getResponseText (.-target %))))
+
+(js/setInterval #(create-sonnet @corpus-counts) interval)
