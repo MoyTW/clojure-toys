@@ -1,6 +1,8 @@
 (ns wysitutwyg.textgen
   (:require [wysitutwyg.markov :as markov]))
 
+(def cache (atom {}))
+  
 (def text-delimiters #{\. \! \?})
 (def word-delimiters #{\space})
 
@@ -8,7 +10,7 @@
   (not (text-delimiters char)))
 (defn not-word-delim? [char]
   (not (word-delimiters char)))
-  
+
 (defn seed-from-sentence
   "Takes a string and maps it to an integer by summing the unicode character
   codes of the characters in the string."
@@ -33,11 +35,20 @@
           num-words (count (break-text not-word-delim? sentence))]
       (markov/generate-text key num-words chain))))
 
+(defn text-from-sentence
+  "First attempts to find cached sentence in atom cache. If none, generates."
+  [sentence chain]
+  (if-let [cached (get @cache sentence)]
+    cached
+    (let [output (gen-from-sentence sentence chain)]
+      (do (swap! cache assoc sentence output)
+          output))))
+
 (defn gen-from-text
   "Generates a text from a text block (presumably of sentences)."
   [text chain]
   (->> text
        (break-text not-text-delim?)
-       (map #(gen-from-sentence % chain))
+       (map #(text-from-sentence % chain))
        (interpose \space)
        (apply str)))
