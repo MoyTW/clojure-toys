@@ -47,7 +47,7 @@
   "Given a starting state, returns a lazy sequence of generated words until it
   reaches an end state."
   [start-state counts]
-  (if-let [next-word (pick-word (counts start-state))]
+  (if-let [next-word (pick-word (counts (map #(apply str %) start-state)))]
     (cons (apply str next-word)
           (lazy-seq (lazy-chain (conj (vec (rest start-state))
                                       next-word)
