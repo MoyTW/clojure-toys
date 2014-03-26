@@ -5,9 +5,8 @@
 
 ;; This should correspond to actual, well, corpora.
 (def my-corpora 
-  [{:name "Shakespeare", :location "sfldr"} 
-   {:name "Random Text", :location "rtext"} 
-   {:name "XKCD", :location "xkcdtext"}])
+  [{:name "Shakespeare's Sonnets", :location "res/corpora/sonnets/"} 
+   {:name "Translation of Lorem Ipsum", :location "res/corpora/loremipsum/"}])
 
 (html/deftemplate landing "pages/landing.html" [corpora]
   [:head] (html/append (first (html/html [:script {:src "res/js/main.js"}])))

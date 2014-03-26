@@ -8,33 +8,53 @@
 
 (def self-url (str (.-protocol (.-location js/window)) "//" (.-host (.-location js/window))))
 
-(def corpus-counts (atom ""))
+(def corpus-info (atom {:location nil :n nil :counts nil}))
 
-;; bah! This parsing action takes too long. Parse it on the server, and provide it as a resource!
-#_(defn set-corpus-counts [corpus]
-  (reset! corpus-counts (markov/parse-counts 2 corpus)))
-
-(defn set-corpus-counts [corpus]
-  (reset! corpus-counts corpus))
-  
 (defn by-id
   "Utility function for getElementById."
   [id]
   (.getElementById js/document id))
    
 ;; Unreasonably slow with a corpus of any non-trivial size.
-(defn create-sonnet [counts]
+;; TODO: Caching doesn't take into account which corpus!
+(defn create-sonnet [info]
   (let [output (textgen/gen-from-text (.-value (by-id "inputtext"))
-                                      counts)]
+                                      (:counts info))]
     (set! (.-value (by-id "outputtext")) output)))
 
-;; Retrieves the text of the corpus from the server
-;; TODO: Hardcoded test file should be choosable!
-(xhrio/send (str self-url "/res/corpora/sonnets/onegram.json") 
-            #(reset! corpus-counts 
-                     (->> (.-target %) 
-                          (.getResponseJson) 
-                          (js->clj) 
-                          (into {}))))
+;; Horribly constructed, and doesn't hold off of trying to build a new list
+;; while it's still getting info from the server
+(defn get-corpus-info []
+  (let [corpus-selection (by-id "corpus-selection")
+        n-selection (by-id "n-selection")]
+    {:location (.-value corpus-selection)
+     :n (.-value n-selection)}))
 
-(js/setInterval #(create-sonnet @corpus-counts) interval)
+;; Need to build in some blocking so that it doesn't gen with old while
+;; getting new from the server
+(defn get-json [info]
+  (xhrio/send (str self-url "/" (:location info) (:n info) ".json")
+              #(swap! corpus-info
+                      assoc
+                      :counts
+                      (->> (.-target %)
+                           (.getResponseJson)
+                           (js->clj)
+                           (into {}))
+                      :n (:n info)
+                      :location (:location info))))
+
+;; TODO: Make this less terrible
+(defn change-corpus []
+  (let [{:keys [location n] :as info} (get-corpus-info)]
+    (if-not (and (= n (:n @corpus-info)) 
+                 (= location (:location @corpus-info)))
+            (get-json info))))
+
+#_(js/setTimeout (change-corpus) 1000)
+(js/setInterval
+  #(do
+    (create-sonnet @corpus-info))
+  interval)
+
+;;; How can we make the text generation more responsive?

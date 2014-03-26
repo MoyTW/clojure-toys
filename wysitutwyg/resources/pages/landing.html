@@ -32,7 +32,7 @@
           </div>
           <br>
           <h3>OPTIONS!</h3>
-          <select>
+          <select id="n-selection">
             <option value=1>1</option>
             <option value=2>2</option>
             <option value=3>3</option>
@@ -40,7 +40,9 @@
           <select id="corpus-selection">
             <option value="file-location">Corpus</option>
           </select>
-        <button type="button" id="choose-corpus">Change Corpus!</button>
+        <button type="button" 
+                id="choose-corpus" 
+                onClick="wysitutwyg.hello.change_corpus()">Change Corpus!</button>
           
         </div>
         <h1>Input:</h1>

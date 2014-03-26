@@ -35,6 +35,7 @@
           num-words (count (break-text not-word-delim? sentence))]
       (markov/generate-text key num-words chain))))
 
+;; TODO: Associate atom /w a corpus (chain)!
 (defn text-from-sentence
   "First attempts to find cached sentence in atom cache. If none, generates."
   [sentence chain]

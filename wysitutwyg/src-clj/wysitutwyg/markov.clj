@@ -40,9 +40,25 @@
  
 (parse-and-save 
   "resources/public/corpora/sonnets/corpus.txt" 
-  "resources/public/corpora/sonnets/onegram.json" 
+  "resources/public/corpora/sonnets/1.json" 
   1)
 (parse-and-save 
   "resources/public/corpora/sonnets/corpus.txt" 
-  "resources/public/corpora/sonnets/twogram.json" 
+  "resources/public/corpora/sonnets/2.json" 
   2)
+(parse-and-save 
+  "resources/public/corpora/sonnets/corpus.txt" 
+  "resources/public/corpora/sonnets/3.json" 
+  3)
+(parse-and-save 
+  "resources/public/corpora/loremipsum/corpus.txt" 
+  "resources/public/corpora/loremipsum/1.json" 
+  1)
+(parse-and-save 
+  "resources/public/corpora/loremipsum/corpus.txt" 
+  "resources/public/corpora/loremipsum/2.json" 
+  2)
+(parse-and-save 
+  "resources/public/corpora/loremipsum/corpus.txt" 
+  "resources/public/corpora/loremipsum/3.json" 
+  3)
