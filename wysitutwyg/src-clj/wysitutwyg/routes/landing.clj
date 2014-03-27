@@ -11,9 +11,11 @@
 (html/deftemplate landing "pages/landing.html" [corpora]
   [:head] (html/append (first (html/html [:script {:src "res/js/main.js"}])))
   [:select#corpus-selection :option]
-    (html/clone-for [corpus corpora] 
+    (html/clone-for [corpus corpora]
                     [:option] (html/content (corpus :name))
-                    [:option] (html/set-attr :value (corpus :location))))
+                    [:option] (html/set-attr :value (corpus :location)))
+  [:select#corpus-selection [:option html/first-of-type]] (html/set-attr :selected "selected"))
 
 (compojure/defroutes routes
   (compojure/GET "/" [] (landing my-corpora)))
+  

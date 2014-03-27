@@ -62,6 +62,6 @@
        (map #(apply str %))
        (apply conj (->> counts
                         (lazy-chain (map seq state))
-                        (take n)))
+                        (take (dec n))))
        (interpose \space)
        (apply str)))

@@ -20,7 +20,7 @@
 (defn create-sonnet [info]
   (let [output (textgen/gen-from-text (.-value (by-id "inputtext"))
                                       (:counts info))]
-    (set! (.-value (by-id "outputtext")) output)))
+    (set! (.-innerHTML (by-id "outputtext")) output)))
 
 ;; Horribly constructed, and doesn't hold off of trying to build a new list
 ;; while it's still getting info from the server
@@ -51,10 +51,12 @@
                  (= location (:location @corpus-info)))
             (get-json info))))
 
-#_(js/setTimeout (change-corpus) 1000)
-(js/setInterval
-  #(do
-    (create-sonnet @corpus-info))
-  interval)
+(defn onload []
+  (do
+    (change-corpus)
+    (js/setInterval (create-sonnet @corpus-info) interval)))
+
+(set! (.-onload js/window) onload)
+
 
 ;;; How can we make the text generation more responsive?
