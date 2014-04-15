@@ -1,7 +1,7 @@
 (ns wysitutwyg.markov
   (:require [clojure.data.json :as json]))
 
-(def test-text "He is mad! It is mad? She is mad. He is sad! It is sad? She is sad.")
+(def test-text "Me is mad! It is mad? She is mad. He is sad! It is sad? She is sad. Ze mad? Ze sad? Ze jelly? Ha! He is mad! He is mad!")
   
 (def delimiters #{\space})
 (def end-nodes #{\. \! \?})
@@ -18,7 +18,66 @@
        (filter (comp not-delimiter? first))
        (mapcat #(partition-by end-nodes %))))
 
+(defn keys-to-strings [s]
+  (vec (map #(apply str %) s)))
+
+(defn inner-map [m]
+  (into {} (map (fn [[k v]] [(apply str k) v]) m)))
+
+(defn stringify
+  [counts]
+  (->> counts
+       (map #(update-in % [0] keys-to-strings))
+       (map #(update-in % [1] inner-map))))
+
+(defn update-start
+  "Updates iff the arity of the key is equal to n."
+  [start n follows rest-corpus]
+  ;TODO: ugly
+  (if (= n 1)
+      (update-in start [[follows]] (fnil inc 0))
+      (let [key [(apply conj [follows] (take (dec n) (rest rest-corpus)))]] 
+        (if (= n (apply count key))
+            (update-in start key (fnil inc 0))
+            start))))
+
+(defn build-output-map
+  [start counts]
+  {:start (map #(update-in % [0] keys-to-strings) start)
+   :end (map str end-nodes)
+   :counts (stringify counts)})
+
+(defn parse-step
+  "Recursive step producing a map of the form 
+  {:start {STATE0 COUNT0, STATE1 COUNT1, ... STATEn COUNTn}
+   :end (ENDSTR0, ENDSTR1 ... ENDSTRn)
+   :counts {STATE0 NEXT0, STATE1 NEXT1, ... STATEn NEXTn}}
+  where STATEn is an array of strings
+  COUNTn is an int
+  NEXTn := [STATEn {STR0 COUNT0, STRn, COUNTn}]
+  This isn't really good documentation; it'll confuse people who aren't me."
+  [n counts start corpus]
+  (let [[state rest-corpus] (split-at n corpus)
+         follows (first rest-corpus)]
+    (cond
+      (and (seq rest-corpus) (end-nodes (first (last state))))
+        (recur n
+               (update-in counts [state follows] (fnil inc 0))
+               (update-start start n follows rest-corpus)
+               (rest corpus))
+      (seq rest-corpus)
+        (recur n
+               (update-in counts [state follows] (fnil inc 0))
+               start
+               (rest corpus))
+      :else
+        (build-output-map start counts))))
+
 ;; Does not properly generate :start nodes for counts > 1!
+;; Actually, it doesn't really know how to handle counts > 1 at all...hmm.
+;; It's a bit of a monster function, too. Unwieldy, at best.
+;; TODO: Refactor this?
+;; TODO: Hey, it's missing the first one! That is - the very first. Hmm.
 (defn parse-counts
   "Creates a mapping of states to counts of the form 
   {start-state {end-state n, end-state n}}
@@ -26,48 +85,19 @@
     end-state | (\\w \\o \\r \\d)
   with the start and end states mapped to :start and :end."
   [n corpus-string]
-  (loop [counts (apply hash-map (mapcat vector
-                                        (map (comp list list) end-nodes)
-                                        (repeat :end)))
-         corpus (process-corpus corpus-string)]
-    (let [[state rest-corpus] (split-at n corpus)
-          follows (first rest-corpus)]
-      (if (seq rest-corpus)
-          (cond 
-            (end-nodes (first (last state)))
-              (recur (update-in counts [:start follows] (fnil inc 0))
-                     (rest corpus))
-            :else
-              (recur (update-in counts [state follows] (fnil inc 0))
-                     (rest corpus)))
-          counts))))
+  (let [processed (process-corpus corpus-string)]
+    (parse-step n
+                {}
+                (update-start {} n (first processed) processed)
+                processed)))
 
-;;; Everything below this is broken by the inclusion of keywords.
-;;; Until I can figure out how I want to handle them in json, it will remain
-;;; so.
-;;; Default behavior uses name, and that is just unacceptable, but how should
-;;; it be handled such that, if I happened to use the Clojure documentation as
-;;; a corpus, it wouldn't break due to the keywords being valid?
-
-#_(defn keys-to-strings [s]
-  (vec (map #(apply str %) s)))
-
-#_(defn inner-map [m]
-  (into {} (map (fn [[k v]] [(apply str k) v]) m)))
-
-#_(defn stringify
-  [m]
-  (->> m 
-       (map #(update-in % [0] keys-to-strings))
-       (map #(update-in % [1] inner-map))))
-
-#_(defn parse-and-save
+(defn parse-and-save
   [infile outfile n]
   (with-open [w (clojure.java.io/writer outfile)]
-    (spit outfile (json/write-str (stringify (parse-counts n (slurp infile)))))))
-
-#_(defn do-parses []
-  (doall
+    (spit outfile (json/write-str (parse-counts n (slurp infile))))))
+    
+(defn do-parses []
+  (do
     (parse-and-save 
       "resources/public/corpora/sonnets/corpus.txt" 
       "resources/public/corpora/sonnets/1.json" 
@@ -92,3 +122,49 @@
       "resources/public/corpora/loremipsum/corpus.txt" 
       "resources/public/corpora/loremipsum/3.json" 
       3)))
+(do-parses)
+
+;;;   New method of generating strings of length n: prefer strings which 
+;;; terminate on end nodes. There is not assured to be a string of length n
+;;; terminating on an end node, and if there is not, return the last searched
+;;; string of length n.
+#_{
+  :start 
+  (
+    [["Ha" "!"] 1]
+    [["Ze" "jelly"] 1]
+    [["Ze" "sad"] 1]
+    [["Ze" "mad"] 1]
+    [["He" "is"] 3]
+    [["She" "is"] 2]
+    [["It" "is"] 2]
+  ), 
+  :end ("!" "." "?"), 
+  :counts
+  (
+    [["." "Ze"] {"mad" 1}]
+    [["It" "is"] {"sad" 1, "mad" 1}]
+    [["jelly" "?"] {"Ha" 1}]
+    [["Ze" "mad"] {"?" 1}]
+    [["is" "mad"] {"." 1, "?" 1, "!" 3}]
+    [["Ha" "!"] {"He" 1}]
+    [["Ze" "sad"] {"?" 1}]
+    [["sad" "?"] {"Ze" 1, "She" 1}]
+    [["is" "sad"] {"." 1, "?" 1, "!" 1}]
+    [["sad" "!"] {"It" 1}]
+    [["!" "It"] {"is" 2}]
+    [["He" "is"] {"mad" 2,"sad" 1}]
+    [["?" "Ze"] {"jelly" 1, "sad" 1}]
+    [["mad" "?"] {"Ze" 1, "She" 1}]
+    [["?" "She"] {"is" 2}]
+    [["mad" "!"] {"He" 1, "It" 1}]
+    [["." "He"] {"is" 1}]
+    [["Ze" "jelly"] {"?" 1}]
+    [["Me" "is"] {"mad" 1}]
+    [["sad" "."] {"Ze" 1}]
+    [["She" "is"] {"sad" 1, "mad" 1}]
+    [["?" "Ha"] {"!" 1}]
+    [["mad" "."] {"He" 1}]
+    [["!" "He"] {"is" 2}]
+  )
+}
