@@ -1,4 +1,4 @@
-(ns wysitutwyg.markov
+(ns wysitutwyg.markov.parser
   (:require [clojure.data.json :as json]))
 
 (def test-text "Me is mad! It is mad? She is mad. He is sad! It is sad? She is sad. Ze mad? Ze sad? Ze jelly? Ha! He is mad! He is mad!")
