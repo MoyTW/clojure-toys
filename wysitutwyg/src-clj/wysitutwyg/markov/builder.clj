@@ -71,60 +71,79 @@
   (map #(conj (vec (rest state)) %) words))
 
 ;; TODO: Is this dfs code needlessly complex/confusing? Probably. Refactor?
-(declare dfs)
+(declare dfs-vert)
 
-(defn dfs-step
+(defn dfs-hori
   "Maps dfs to the words (sideways expansion), mutually recursive with dfs.
   Returns lazy sequence of state/nil values."
-  [state datamap n depth words]
+  [state {:keys [end] :as datamap} n depth words]
   (->> (words-to-states state words)
-       (map #(dfs % datamap n (inc depth)))
-       (filter #(not= nil %))
+       (remove #(end (last %)))
+       (map #(dfs-vert % datamap n (inc depth)))
+       (remove nil?)
        (first)))
 
 ;; TODO: It won't work on 2-grams, 3-grams, etc. Only singles.
-(defn dfs
+;; TODO: Ugly and unhelpfully obtuse.
+(defn dfs-vert
   "Runs the dfs (downwards expansion), call this to start."
   [state {:keys [counts] :as datamap} n depth]
-  (if (= depth n)
+  (if (= depth (dec n))
       (if-let [end-state (find-first-end state datamap)]
-        (cons state (vector (vector end-state)))) ; hahaha that's silly
-      (let [words (pick-words (counts state))]
-        (if-let [result (dfs-step state datamap n depth words)]
-          (cons state result)))))
-
-;(defn dfs-begin
-;  [{:keys [start counts] :as datamap} n depth]
-
-      
-(prn "With No:" (dfs ["No"] datamap 5 0))
+        (cons state (vector (vector end-state)))) ; This is pretty silly.
+      (if-let [result 
+                 (dfs-hori state datamap n depth (pick-words (counts state)))]
+        (cons state result))))
+          
+(prn "With No:" (dfs-vert ["No"] datamap 5 0))
 ; "No one who chooses to distinguish." - how to get it to return this?
-(prn "With No:" (dfs ["No"] datamap 2 0))
+(prn "With No:" (dfs-vert ["No"] datamap 2 0))
 ;;; What do we do if it's nil (cannot find any sentences of that length)?
 ;;; We could do:
 ;;;   * Run it with a different start node, but that may just delay it. So, 
 ;;;     that doesn't actually solve our problem!
 ;;;   * Do a single-path dfs to the targeted depth.
 
-#_(defn lazy-chain
-  "Given a starting state, returns a lazy sequence of generated words until it
-  reaches an end state."
-  [start-state counts]
-  (if-let [next-word (pick-word (counts (map #(apply str %) start-state)))]
-    (cons (apply str next-word)
-          (lazy-seq (lazy-chain (conj (vec (rest start-state))
-                                      next-word)
-                                counts)))))
+(defn dfs-begin
+  [{:keys [start counts] :as datamap} n]
+  {:pre [(pos? n)]}
+  (->> (pick-words start)
+       (map #(dfs-vert % datamap n 0))
+       (remove nil?)
+       (first)))
 
-#_(defn generate-text
-  "Given a starting state as a string, generates n further words from the given
-  count graph. Ends once n words have been generated, or when a terminal node
-  has been reached."
-  [state n counts]
-  (->> (reverse state)
-       (map #(apply str %))
-       (apply conj (->> counts
-                        (lazy-chain (map seq state))
-                        (take (dec n))))
-       (interpose \space)
-       (apply str)))
+(defn dive
+  [state {:keys [counts] :as datamap} n depth]
+  (if (= depth (dec n))
+      [state]
+      (let [result [(pick-word (counts state))]]
+        (cons state (dive result datamap n (inc depth))))))
+
+(defn dfs-single
+  [{:keys [start counts] :as datamap} n]
+  {:pre [(pos? n)]}
+  (dive (pick-word start) datamap n 0))
+
+;; TODO: Assumes single tuples.
+;; TODO: While this handles multiple sentences, the fact that it generates
+;; them is a problem. If you do (gen-sentence corpus 150), it should generate
+;; one very huge sentence, not multiple sentences ending with a terminal
+;; character whose word counts add up to 150.
+;; TODO: Stack overflow at ~300 depth with loremipsum!
+(defn gen-sentence
+  [{:keys [end] :as datamap} n]
+  {:pre [(pos? n)]}
+  (let [coll (if-let [s (dfs-begin datamap n)] s (dfs-single datamap n))]
+    (->> coll
+         (rest)
+         (map last)
+         (concat (first coll))
+         (reduce #(if (end %2) 
+                      (str %1 %2)
+                      (str %1 \space %2))))))
+
+(prn "5: " (dfs-begin datamap 5))
+(prn "1: " (gen-sentence datamap 1))
+(prn "5: " (gen-sentence datamap 5))
+(prn (gen-sentence datamap 75))
+; (prn (gen-sentence datamap -1))
