@@ -98,6 +98,14 @@
     
 (defn do-parses []
   (do
+    (parse-and-save
+      "resources/public/corpora/test/test.txt"
+      "resources/public/corpora/test/test1.json"
+      1)
+    (parse-and-save
+      "resources/public/corpora/test/repeating.txt"
+      "resources/public/corpora/test/repeating1.json"
+      1)
     (parse-and-save 
       "resources/public/corpora/sonnets/corpus.txt" 
       "resources/public/corpora/sonnets/1.json" 
@@ -123,48 +131,3 @@
       "resources/public/corpora/loremipsum/3.json" 
       3)))
 (do-parses)
-
-;;;   New method of generating strings of length n: prefer strings which 
-;;; terminate on end nodes. There is not assured to be a string of length n
-;;; terminating on an end node, and if there is not, return the last searched
-;;; string of length n.
-#_{
-  :start 
-  (
-    [["Ha" "!"] 1]
-    [["Ze" "jelly"] 1]
-    [["Ze" "sad"] 1]
-    [["Ze" "mad"] 1]
-    [["He" "is"] 3]
-    [["She" "is"] 2]
-    [["It" "is"] 2]
-  ), 
-  :end ("!" "." "?"), 
-  :counts
-  (
-    [["." "Ze"] {"mad" 1}]
-    [["It" "is"] {"sad" 1, "mad" 1}]
-    [["jelly" "?"] {"Ha" 1}]
-    [["Ze" "mad"] {"?" 1}]
-    [["is" "mad"] {"." 1, "?" 1, "!" 3}]
-    [["Ha" "!"] {"He" 1}]
-    [["Ze" "sad"] {"?" 1}]
-    [["sad" "?"] {"Ze" 1, "She" 1}]
-    [["is" "sad"] {"." 1, "?" 1, "!" 1}]
-    [["sad" "!"] {"It" 1}]
-    [["!" "It"] {"is" 2}]
-    [["He" "is"] {"mad" 2,"sad" 1}]
-    [["?" "Ze"] {"jelly" 1, "sad" 1}]
-    [["mad" "?"] {"Ze" 1, "She" 1}]
-    [["?" "She"] {"is" 2}]
-    [["mad" "!"] {"He" 1, "It" 1}]
-    [["." "He"] {"is" 1}]
-    [["Ze" "jelly"] {"?" 1}]
-    [["Me" "is"] {"mad" 1}]
-    [["sad" "."] {"Ze" 1}]
-    [["She" "is"] {"sad" 1, "mad" 1}]
-    [["?" "Ha"] {"!" 1}]
-    [["mad" "."] {"He" 1}]
-    [["!" "He"] {"is" 2}]
-  )
-}
