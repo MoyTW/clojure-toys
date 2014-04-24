@@ -6,7 +6,7 @@
 (defn get-rand [x]
   (.nextInt *rnd* x))
 
- (def map-loc "resources/public/corpora/loremipsum/2.json")
+ (def map-loc "resources/public/corpora/sonnets/1.json")
 
 (defn read-into-datamap
   [slurpable]

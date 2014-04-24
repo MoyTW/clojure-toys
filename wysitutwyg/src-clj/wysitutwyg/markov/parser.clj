@@ -2,21 +2,42 @@
   (:require [clojure.data.json :as json]))
 
 (def test-text "Me is mad! It is mad? She is mad. He is sad! It is sad? She is sad. Ze mad? Ze sad? Ze jelly? Ha! He is mad! He is mad!")
-  
-(def delimiters #{\space})
-(def end-nodes #{\. \! \?})
+
+(def delimiter-regex " ")
+(def end-strings #{"." "!" "?"})
 ; How to handle ellipses?
 
-(defn not-delimiter? [char]
-  (not (delimiters char)))
+;; I won't be winning any elegant code competitions...
+(defn split-by-string
+  [string splitter]
+  (loop [string string out []]
+    (let [idx (.indexOf string splitter)]
+      (if (>= idx 0)
+          (let [e-idx (+ idx (count splitter))
+                pre (if-let [p (seq (.substring string 0 idx))] [p])
+                mid (if-let [m (seq (.substring string idx e-idx))] [m])
+                suf (seq (.substring string e-idx))]
+          (recur (apply str suf) (concat out pre mid)))
+          (if (empty? string) 
+              (vec (map #(apply str %) (vec out)))
+              (conj (vec (map #(apply str %) out)) string))))))
+
+(defn split-step
+  [out in]
+  (mapcat #(split-by-string % in) out))
+  
+(defn split-by-all
+  [string splitters]
+  (reduce split-step (split-by-string string (first splitters)) (rest splitters)))
 
 (defn process-corpus [corpus]
   "Processes the corpus into a collection of segments, determined by the
-  delimiter set. Members of end-nodes are grouped into their own segments."
-  (->> corpus
-       (partition-by not-delimiter?)
-       (filter (comp not-delimiter? first))
-       (mapcat #(partition-by end-nodes %))))
+  delimiter set. Members of end-strings are grouped into their own segments."  
+  (->> (.split corpus delimiter-regex)
+       (vec) ; If there are no splits, String.split produces [corpus].
+       (map #(apply str %))
+       (mapcat #(split-by-all % end-strings))))
+(prn (process-corpus test-text))
 
 (defn keys-to-strings [s]
   (vec (map #(apply str %) s)))
@@ -44,7 +65,7 @@
 (defn build-output-map
   [start counts]
   {:start (map #(update-in % [0] keys-to-strings) start)
-   :end (map str end-nodes)
+   :end (map str end-strings)
    :counts (stringify counts)})
 
 (defn parse-step
@@ -60,7 +81,7 @@
   (let [[state rest-corpus] (split-at n corpus)
          follows (first rest-corpus)]
     (cond
-      (and (seq rest-corpus) (end-nodes (first (last state))))
+      (and (seq rest-corpus) (end-strings (last state)))
         (recur n
                (update-in counts [state follows] (fnil inc 0))
                (update-start start n follows rest-corpus)
@@ -130,4 +151,17 @@
       "resources/public/corpora/loremipsum/corpus.txt" 
       "resources/public/corpora/loremipsum/3.json" 
       3)))
-(do-parses)
+#_(do-parses)
+#_(parse-and-save
+  "resources/public/corpora/test/test.txt"
+  "resources/public/corpora/test/test1.json"
+  1)
+(def end-strings #{"\n"})
+(parse-and-save
+  "resources/public/corpora/sonnets/short.txt"
+  "resources/public/corpora/sonnets/short1.json"
+  1)
+(parse-and-save
+  "resources/public/corpora/sonnets/corpus.txt"
+  "resources/public/corpora/sonnets/1.json"
+  1)
