@@ -5,21 +5,6 @@
 (def ^:dynamic ^java.util.Random *rnd* (java.util.Random. 1))
 (defn get-rand [x]
   (.nextInt *rnd* x))
-
- (def map-loc "resources/public/corpora/loremipsum/1.json")
-
-(defn read-into-datamap
-  [slurpable]
-  (let [initial (into {}
-                  (for [[k v] (json/read-str (slurp slurpable))]
-                    [(keyword k) v]))]
-    (-> initial
-        (update-in [:end] #(into #{} %))
-        (update-in [:start] #(apply hash-map (apply concat %)))
-        (update-in [:counts] #(apply hash-map (apply concat %))))))
-
-(def datamap (read-into-datamap map-loc))
-(def counts (:counts datamap))
         
 (defn pick-word
   "Takes a map of counts in the form of {'sad' 2, 'mad' 3} (values from the 
@@ -112,9 +97,3 @@
          (reduce #(if (end %2) 
                       (str %1 %2)
                       (str %1 \space %2))))))
-
-(prn "5: dfs-begin " (dfs-begin datamap 5))
-(prn "1: " (gen-sentence datamap 1))
-(prn "5: " (gen-sentence datamap 5))
-(prn (gen-sentence datamap 8)) ; This one has some minor backtracking
-; (prn (gen-sentence datamap 9001))

@@ -18,4 +18,3 @@
 
 (compojure/defroutes routes
   (compojure/GET "/" [] (landing my-corpora)))
-  
