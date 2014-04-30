@@ -110,16 +110,17 @@
 
 ;; Tail-recursive
 (defn- dive
-  [state {:keys [counts] :as datamap} n depth cont]
+  [state {:keys [counts end] :as datamap} n depth cont]
   (if (>= (+ depth (count state)) n)
       (conj cont state)
-      (let [result (conj (vec (rest state)) (pick-word (counts state)))]
-        (recur result datamap n (inc depth) (conj cont state)))))
+      (let [next-word (pick-word (counts state))
+            next-depth (if (end next-word) depth (inc depth))
+            result (conj (vec (rest state)) next-word)]
+        (recur result datamap n next-depth (conj cont state)))))
 
 (defn- dfs-single
   [{:keys [start counts] :as datamap} n]
   {:pre [(pos? n)]}
-  (prn "Diving!")
   (dive (pick-word start) datamap n 0 []))
 
 (defn gen-sentence
@@ -154,23 +155,68 @@
 ;; I thought I fixed that, but I didn't.
 ;; This is why tests are good.
 
-(defn test-both [n]
+(defn sentence-length
+  [s]
+  (count (clojure.string/split s #"\s")))
+
+#_(defn test-both [n]
   (do
     (prn "LENGTH: " n)
     (binding [*rnd* (java.util.Random. 1)]
-      (prn "Psdo: " (gen-sentence dmap n)))
+      (let [sentence (gen-sentence dmap n)]
+        (prn "Psdo - LEN: " (sentence-length sentence) " STR: " sentence)))
     (binding [*rnd* (java.util.Random. 1)]
-      (prn "True: " (gen-sentence-true-dfs dmap n)))))
+      (let [sentence (gen-sentence-true-dfs dmap n)]
+        (prn "Psdo - LEN: " (sentence-length sentence) " STR: " sentence)))))
+(defn test-both [n]
+  (let [old (binding [*rnd* (java.util.Random. 1)]
+              (gen-sentence dmap n))
+        new (binding [*rnd* (java.util.Random. 1)]
+              (gen-sentence-true-dfs dmap n))]
+    (do
+      (if-not (= n (sentence-length old))
+              (prn (str "OLD! N: " n " LEN: " (sentence-length old)
+                        " SEN: " old)))
+      (if-not (= n (sentence-length new))
+              (prn (str "NEW! N: " n " LEN: " (sentence-length new)
+                        " SEN: " new))))))
 
-; (test-both 2)
-(test-both 10) ; lol that tricked me into thinking it was length 9!
-;;; TODO: Issue: punctuation has its own depth in dives
-(test-both 20)
-(test-both 40) ;; Issue: 39 not 40!
-(test-both 30) ;; Issue: 39 not 40!
+#_(doall (map test-both (range 1 100)))
+;   Whoa okay, wow, some of this is super duper broken. Uh, is my end case
+; HORRIBLY WRONG?
 
-#_(binding [*rnd* (java.util.Random. 1)]
-  (prn (gen-sentence dmap 500)))
+; -----=====##### CONCERNING NEW ALGORITHM GENNING SHORT #####=====-----
+; Hmm, they all appear to be 1 off?
+; No, they're not. See: #89, #87.
+(doall (map test-both (range 30 50)))
+(doall (map test-both (range 85 90)))
 
-#_(binding [*rnd* (java.util.Random. 1)]
-  (prn (gen-sentence-true-dfs dmap 500)))
+; -----=====##### CONCERNING #89 AND #50 #####=====-----
+;   Okay, so, for #89 and #50 old, they both end on "resultant pleasure?" - 
+; which is the last set of tokens in the corpus! So it has nowhere to go from
+; there, since it's using 2-tuples, and so it goes woefully under-sized. That's
+; because my dive doesn't do any backtracking. uuuuuuuuh why doesn't it do any
+; backtracking? Past-me, I AM VERY CROSS.
+
+; -----=====##### CONCERNING FALLBACK TEXT GENERATION BEHAVIOR #####=====-----
+;   OKAY I get why some generated texts are slightly shorter than n! That's 
+; because punctuation counts as a word, so if the dive hits the end of a 
+; sentence...bam! One extra level down.
+;   Question: should the fallback text be able to generate sentences, or should 
+; it, well, not? It'd look super funny if it didn't but then the normal text 
+; looks super funny at high lengths, so...? But, no, it should not have any 
+; punctuation at all!
+;   Okay, hold on. Let's assume a grammar of a, b, c, d...z, where every node 
+; leads to only the next node in the alphabet, and a "." which is our end node.
+;   What happens when you try to generate a fifty-word sentence? The dfs will 
+; return nil, because there is no valid fifty-word sentence. If we try to do 
+; a fifty-word dive, without punctuation, we have three options:
+;   * Return a combination of sentences which collectively have fifty words
+;   * Return the truncated twenty-six word sentence
+;   * Return nil, and you need ANOTHER fallback algorithm! Actually, that'd be 
+; a little like trying to get blood out of a stone; there's really no way to 
+; generate a fifty-word sentence from a linear sequence of twenty-six words.
+;   So, if this is the case, we MUST accept punctuation in our fallback 
+; sentences if we want to get a text with fifty words, OR accept that the 
+; text will be less than fifty words.
+;   I will do the former.
