@@ -3,7 +3,7 @@
 (def test-text "Me is mad! It is mad? She is mad. He is sad! It is sad? She is sad. Ze mad? Ze sad? Ze jelly? Ha! He is mad! He is mad!")
 
 ;; I won't be winning any elegant code competitions...
-(defn split-by-string
+(defn- split-by-string
   [string splitter]
   (loop [string string out []]
     (let [idx (.indexOf string splitter)]
@@ -17,15 +17,15 @@
               (vec (map #(apply str %) (vec out)))
               (conj (vec (map #(apply str %) out)) string))))))
 
-(defn split-step
+(defn- split-step
   [out in]
   (mapcat #(split-by-string % in) out))
   
-(defn split-by-all
+(defn- split-by-all
   [string splitters]
   (reduce split-step (split-by-string string (first splitters)) (rest splitters)))
 
-(defn process-corpus [corpus {:keys [delimiter-regex end-strings]}]
+(defn- process-corpus [corpus {:keys [delimiter-regex end-strings]}]
   "Processes the corpus into a collection of segments, determined by the
   delimiter set. Members of end-strings are grouped into their own segments."  
   (->> (.split corpus delimiter-regex)
@@ -33,19 +33,19 @@
        (map #(apply str %))
        (mapcat #(split-by-all % end-strings))))
 
-(defn keys-to-strings [s]
+(defn- keys-to-strings [s]
   (vec (map #(apply str %) s)))
 
-(defn inner-map [m]
+(defn- inner-map [m]
   (into {} (map (fn [[k v]] [(apply str k) v]) m)))
 
-(defn stringify
+(defn- stringify
   [counts]
   (->> counts
        (map #(update-in % [0] keys-to-strings))
        (map #(update-in % [1] inner-map))))
 
-(defn update-start
+(defn- update-start
   "Updates iff the arity of the key is equal to n."
   [start n follows rest-corpus]
   ;TODO: ugly
@@ -56,13 +56,13 @@
             (update-in start key (fnil inc 0))
             start))))
 
-(defn build-output-map
+(defn- build-output-map
   [start counts end-strings]
   {:start (map #(update-in % [0] keys-to-strings) start)
    :end (map str end-strings)
    :counts (stringify counts)})
 
-(defn parse-step
+(defn- parse-step
   "Recursive step producing a map of the form 
   {:start {STATE0 COUNT0, STATE1 COUNT1, ... STATEn COUNTn}
    :end (ENDSTR0, ENDSTR1 ... ENDSTRn)
@@ -106,7 +106,7 @@
                 arity
                 end-strings)))
 
-(prn (parse-counts test-text {:arity 1 :end-strings #{"." "!" "?"} :delimiter-regex " "}))
+#_(prn (parse-counts test-text {:arity 1 :end-strings #{"." "!" "?"} :delimiter-regex " "}))
 
 (def expected-output
 {:start '([["Ha"] 1] [["Ze"] 3] [["He"] 3] [["She"] 2] [["It"] 2] [["Me"] 1]), :end '("!" "." "?"), :counts '([["!"] {"He" 2, "It" 2}] [["is"] {"sad" 3, "mad" 5}] [["It"] {"is" 2}] [["Ze"] {"jelly" 1, "sad" 1, "mad" 1}] [["."] {"Ze" 1, "He" 1}] [["She"] {"is" 2}] [["mad"] {"." 1, "?" 2, "!" 3}] [["sad"] {"." 1, "?" 2, "!" 1}] [["Me"] {"is" 1}] [["Ha"] {"!" 1}] [["He"] {"is" 3}] [["jelly"] {"?" 1}] [["?"] {"Ha" 1, "Ze" 2, "She" 2}])})

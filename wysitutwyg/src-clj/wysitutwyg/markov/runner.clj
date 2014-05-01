@@ -28,7 +28,7 @@
 ;;; with each member of the "targets" array representing a request that the
 ;;; corpus be parsed to the destination, including parsing parameters.
 
-(defn read-json-str
+(defn- read-json-str
   "Function to map from json to a Clojure map. Keywordizes, places end-strings
   into a set."
   [string]
@@ -37,7 +37,7 @@
                  :value-fn #(if (= %1 :end-strings) (into #{} %2) %2)))
                  ; I bet they built something in for this that I'm not using.
 
-(defn get-dirs
+(defn- get-dirs
   "Returns a sequence of File objects representing directories from the 
   indicated directory."
   [dir]
@@ -46,7 +46,7 @@
        (.listFiles)
        (filter #(.isDirectory %))))
 
-(defn find-file
+(defn- find-file
   "Given a directory, finds the file with a matching name, or empty seq."
   [dir name]
   {:pre (= (type dir) java.io.File)}
@@ -54,14 +54,14 @@
        (.listFiles)
        (filter #(= name (.getName %)))))
 
-(defn resolve-parse
+(defn- resolve-parse
   "Resolves a single parse request, outputting to filesystem."
   [corpus path {:keys [outfile] :as parse}]
   (prn (str "    Executing parse, writing to: " outfile))
   (with-open [w (clojure.java.io/writer (str path File/separator outfile))]
     (spit w (json/write-str (parser/parse-counts corpus parse)))))
 
-(defn resolve-parses
+(defn- resolve-parses
   "Takes a map of requests and parses and outputs all results."
   [{:keys [path targets corpus]}]
   {:pre (= (type path) java.io.File)}

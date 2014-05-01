@@ -31,12 +31,12 @@
 (defn retrieve-datamap
   [corpus file]
   (if-let [f (find-file (find-file corpora-root corpus) file)]
-    (markov/parse-into-datamap (slurp f))))
+    (markov/read-into-datamap f)))
 
-;;; TODO: Implement this.
 (defn transform
+  "Runs the text generation."
   [datamap body]
-  body)
+  (markov/transform datamap body))
 
 ;;; Return the text, transformed by the appropriate datamap.
 ;;; TODO: Ugly.
