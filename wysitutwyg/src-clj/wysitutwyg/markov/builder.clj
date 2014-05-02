@@ -75,18 +75,20 @@
   (let [next-node (conj (vec (rest node)) (first edges))]
     {:depth (inc depth)
      :node next-node
-     :edges (->> (counts next-node)
-                 (pick-words))}))
+     :edges (pick-words (counts next-node))}))
 
 ;; More true implementation of dfs
 (defn dfs-true
   [{:keys [counts end] :as datamap} n stack]
+  (Thread/sleep 500)
+  (prn (str "dfs-true first=" (first stack)))
   (if-let [{:keys [depth node edges] :as node-info} (first stack)]
     (cond
       (and (= (+ depth (dec (count node))) n) ; TODO: lol
            (end (last node)))
         (reverse (map #(% :node) stack))
-      (or (= depth n) (empty? edges)) (recur datamap n (rest stack))
+      (or (end (last node)) (= depth n) (empty? edges))
+        (recur datamap n (rest stack))
       :else
         (let [next-info (gen-next-info datamap node-info)
               new-node-info (update-in node-info [:edges] rest)]
@@ -108,20 +110,34 @@
        (remove nil?)
        (first)))
 
-;; Tail-recursive
+(defn gen-next-dive
+  [{:keys [counts end] :as datamap} {:keys [depth node edges]}]
+  (let [next-node (conj (vec (rest node)) (first edges))]
+    {:depth (if (end (first edges)) depth (inc depth))
+     :node next-node
+     :edges (pick-words (counts next-node))}))
+
 (defn- dive
-  [state {:keys [counts end] :as datamap} n depth cont]
-  (if (>= (+ depth (count state)) n)
-      (conj cont state)
-      (let [next-word (pick-word (counts state))
-            next-depth (if (end next-word) depth (inc depth))
-            result (conj (vec (rest state)) next-word)]
-        (recur result datamap n next-depth (conj cont state)))))
+  [{:keys [counts end] :as datamap} n stack]
+  (if-let [{:keys [depth node edges] :as node-info} (first stack)]
+    (cond
+      (>= (+ depth (count node)) n) ; TODO: lol
+        (reverse (map #(% :node) stack))
+      (empty? edges)
+        (recur datamap n (rest stack))
+      :else
+        (let [next-info (gen-next-dive datamap node-info)
+              new-node-info (update-in node-info [:edges] rest)]
+          (recur datamap n (conj (cons new-node-info (rest stack)) next-info))))))
 
 (defn- dfs-single
   [{:keys [start counts] :as datamap} n]
   {:pre [(pos? n)]}
-  (dive (pick-word start) datamap n 0 []))
+  (prn (str "Could not gen for: " n " entering single mode"))
+  (->> (pick-words start)
+       (map #(dive datamap n [{:depth 0 :node % :edges (pick-words (counts %))}]))
+       (remove nil?)
+       (first)))
 
 (defn gen-sentence
   [{:keys [end] :as datamap} n]
@@ -159,15 +175,7 @@
   [s]
   (count (clojure.string/split s #"\s")))
 
-#_(defn test-both [n]
-  (do
-    (prn "LENGTH: " n)
-    (binding [*rnd* (java.util.Random. 1)]
-      (let [sentence (gen-sentence dmap n)]
-        (prn "Psdo - LEN: " (sentence-length sentence) " STR: " sentence)))
-    (binding [*rnd* (java.util.Random. 1)]
-      (let [sentence (gen-sentence-true-dfs dmap n)]
-        (prn "Psdo - LEN: " (sentence-length sentence) " STR: " sentence)))))
+;;; See: 85 - New - IS MULTIPLE SENTENCES!
 (defn test-both [n]
   (let [old (binding [*rnd* (java.util.Random. 1)]
               (gen-sentence dmap n))
@@ -188,8 +196,8 @@
 ; -----=====##### CONCERNING NEW ALGORITHM GENNING SHORT #####=====-----
 ; Hmm, they all appear to be 1 off?
 ; No, they're not. See: #89, #87.
-(doall (map test-both (range 30 50)))
-(doall (map test-both (range 85 90)))
+#_(doall (map test-both (range 30 50)))
+#_(doall (map test-both (range 85 90)))
 
 ; -----=====##### CONCERNING #89 AND #50 #####=====-----
 ;   Okay, so, for #89 and #50 old, they both end on "resultant pleasure?" - 
@@ -220,3 +228,32 @@
 ; sentences if we want to get a text with fifty words, OR accept that the 
 ; text will be less than fifty words.
 ;   I will do the former.
+
+(defn time-both [n]
+  (prn (str "For " n " old, then new:"))
+  (do
+    (binding [*rnd* (java.util.Random. 1)]
+      (time (gen-sentence dmap n)))
+    (binding [*rnd* (java.util.Random. 1)]
+      (time (gen-sentence-true-dfs dmap n)))))
+    
+#_(doall (map time-both (range 80 100)))
+#_(doall (map time-both (range 150 155)))
+; What's happening at 153? It takes an inordinate amount of time to resolve.
+
+;;; -----=====##### CONCERNING 153 #####=====-----
+;   Watching what's happening using the true-dfs code is quite interesting. One
+; thing that could be improved is predicting end branches. That is, if a node
+; will inevitably lead to a end node or terminating node, mark it as such with
+; the length to the end, so that it doesn't actually have to go down and
+; attempt to resolve it. That would speed it up in some situations where the
+; chain is very loosely interconnected (graph is relatively sparse).
+;   Also, obviously, caching would be a really good idea.
+;   In a "production" environment, though, even if it does cache, taking half
+; an hour to resolve the first time generation of a full-tree traversal is very
+; much not ideal. Can we return partial or incremental results?
+;   Unfortunately...not really, no, at least not when we're attempting to
+; compute a sentence ending in a specific node. We can return *temporary*
+; results, but not *partial* results (temporary by, for example, switching to
+; the "doesn't care about end nodes" algorithm while also leaving the main
+; computation running in the background).
