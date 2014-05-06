@@ -11,6 +11,11 @@
   `(binding [*rnd* (java.util.Random. ~seed)]
     ~@code))
 
+(defn word-count
+  "Returns the word count of a string."
+  [s]
+  (count (clojure.string/split s #"\s")))
+
 (defn- pick-word
   "Takes a map of counts in the form of {'sad' 2, 'mad' 3} (values from the 
   n-gram map) and picks a word, by the ratio of the counts."
@@ -39,49 +44,20 @@
   [state {:keys [counts end] :as datamap}]
   (first (filter end (pick-words (counts state)))))
 
-(defn- words-to-states
-  "Takes a state and a collection of words, and maps it to the next set of
-  states."
-  [state words]
-  (map #(conj (vec (rest state)) %) words))
-
-(defn- gen-next-continuations
-  [{:keys [counts end] :as datamap} {:keys [depth queue state]}]
-  (->> (counts state)
-       (pick-words)
-       (words-to-states state)
-       (remove #(end (last %)))
-       (map #(hash-map :depth (inc depth)
-                       :queue (conj queue state)
-                       :state %1))))
-
-;; cont consists of: {:depth depth, :queue string, :state state}
-;;   Works for 2-3 tuples with caveats - many fewer viable paths, so drops to
-;; dive a lot more! Also - it has n too many words, where n is one less than
-;; the size of the tuple.
-(defn- dfs-cont
-  [{:keys [counts end] :as datamap} n continuations]
-  (if-let [{:keys [depth queue state] :as cont} (first continuations)]
-    (if (>= (+ depth (count state)) n)
-        (if-let [end-state (find-first-end state datamap)]
-          (conj queue state (vector end-state))
-          (recur datamap n (rest continuations)))
-        (if-let [new-conts (seq (gen-next-continuations datamap cont))]
-          (recur datamap n (apply conj (rest continuations) new-conts))
-          (recur datamap n (rest continuations))))))
-
-(defn gen-next-info
-  [{:keys [counts end] :as datamap} {:keys [depth node edges]}]
+(defn gen-next-frame
+  "Builds the next frame, applying the func parameter to the depth to produce
+  the next depth."
+  [inc-depth? 
+   {:keys [counts end] :as datamap} 
+   {:keys [depth node edges] :as frame}]
   (let [next-node (conj (vec (rest node)) (first edges))]
-    {:depth (inc depth)
+    {:depth (if inc-depth? (inc depth) depth)
      :node next-node
      :edges (pick-words (counts next-node))}))
 
-;; More true implementation of dfs
-(defn dfs-true
+(defn- dfs
+  "Runs a dfs to produce a sequence of tokens of n depth ending on a end node."
   [{:keys [counts end] :as datamap} n stack]
-  (Thread/sleep 500)
-  (prn (str "dfs-true first=" (first stack)))
   (if-let [{:keys [depth node edges] :as node-info} (first stack)]
     (cond
       (and (= (+ depth (dec (count node))) n) ; TODO: lol
@@ -90,34 +66,13 @@
       (or (end (last node)) (= depth n) (empty? edges))
         (recur datamap n (rest stack))
       :else
-        (let [next-info (gen-next-info datamap node-info)
-              new-node-info (update-in node-info [:edges] rest)]
-          (recur datamap n (conj (cons new-node-info (rest stack)) next-info))))))
-
-(defn- dfs-true-begin
-  [{:keys [start counts] :as datamap} n]
-  {:pre [(pos? n)]}
-  (->> (pick-words start)
-       (map #(dfs-true datamap n [{:depth 0 :node % :edges (pick-words (counts %))}]))
-       (remove nil?)
-       (first)))
-
-(defn- dfs-begin
-  [{:keys [start counts] :as datamap} n]
-  {:pre [(pos? n)]}
-  (->> (pick-words start)
-       (map #(dfs-cont datamap n [{:queue [] :state % :depth 0}]))
-       (remove nil?)
-       (first)))
-
-(defn gen-next-dive
-  [{:keys [counts end] :as datamap} {:keys [depth node edges]}]
-  (let [next-node (conj (vec (rest node)) (first edges))]
-    {:depth (if (end (first edges)) depth (inc depth))
-     :node next-node
-     :edges (pick-words (counts next-node))}))
+        (let [next-info (gen-next-frame true datamap node-info)
+              new-node-info (update-in node-info [:edges] rest)
+              next-stack (conj (cons new-node-info (rest stack)) next-info)]
+          (recur datamap n next-stack)))))
 
 (defn- dive
+  "Runs a dfs, with no punctuation constraints."
   [{:keys [counts end] :as datamap} n stack]
   (if-let [{:keys [depth node edges] :as node-info} (first stack)]
     (cond
@@ -126,23 +81,29 @@
       (empty? edges)
         (recur datamap n (rest stack))
       :else
-        (let [next-info (gen-next-dive datamap node-info)
-              new-node-info (update-in node-info [:edges] rest)]
-          (recur datamap n (conj (cons new-node-info (rest stack)) next-info))))))
+        (let [next-info (gen-next-frame (not (end (first edges))) 
+                                        datamap 
+                                        node-info)
+              new-node-info (update-in node-info [:edges] rest)
+              next-stack (conj (cons new-node-info (rest stack)) next-info)]
+          (recur datamap n next-stack)))))
 
-(defn- dfs-single
-  [{:keys [start counts] :as datamap} n]
+(defn- run-func
+  [f {:keys [start counts] :as datamap} n]
   {:pre [(pos? n)]}
-  (prn (str "Could not gen for: " n " entering single mode"))
   (->> (pick-words start)
-       (map #(dive datamap n [{:depth 0 :node % :edges (pick-words (counts %))}]))
+       (map #(f datamap n [{:depth 0
+                            :node %
+                            :edges (pick-words (counts %))}]))
        (remove nil?)
        (first)))
 
 (defn gen-sentence
   [{:keys [end] :as datamap} n]
   {:pre [(pos? n)]}
-  (let [coll (if-let [s (dfs-begin datamap n)] s (dfs-single datamap n))]
+  (let [coll (if-let [s (run-func dfs datamap n)]
+                     s
+                     (run-func dive datamap n))]
     (->> coll
          (rest)
          (map last)
@@ -151,60 +112,10 @@
                       (str %1 %2)
                       (str %1 \space %2))))))
 
-(defn gen-sentence-true-dfs
-  [{:keys [end] :as datamap} n]
-  {:pre [(pos? n)]}
-  (let [coll (if-let [s (dfs-true-begin datamap n)] s (dfs-single datamap n))]
-    (->> coll
-         (rest)
-         (map last)
-         (concat (first coll))
-         (reduce #(if (end %2) 
-                      (str %1 %2)
-                      (str %1 \space %2))))))
-
-(def map-loc "resources/public/corpora/loremipsum/2.json")
-(use 'wysitutwyg.markov.textgen)
-(def dmap (read-into-datamap map-loc))
-
-;; TODO: Okay, it doesn't generate the currect length if you have 2-tuples.
-;; I thought I fixed that, but I didn't.
-;; This is why tests are good.
-
-(defn sentence-length
-  [s]
-  (count (clojure.string/split s #"\s")))
-
-;;; See: 85 - New - IS MULTIPLE SENTENCES!
-(defn test-both [n]
-  (let [old (binding [*rnd* (java.util.Random. 1)]
-              (gen-sentence dmap n))
-        new (binding [*rnd* (java.util.Random. 1)]
-              (gen-sentence-true-dfs dmap n))]
-    (do
-      (if-not (= n (sentence-length old))
-              (prn (str "OLD! N: " n " LEN: " (sentence-length old)
-                        " SEN: " old)))
-      (if-not (= n (sentence-length new))
-              (prn (str "NEW! N: " n " LEN: " (sentence-length new)
-                        " SEN: " new))))))
-
-#_(doall (map test-both (range 1 100)))
-;   Whoa okay, wow, some of this is super duper broken. Uh, is my end case
-; HORRIBLY WRONG?
-
-; -----=====##### CONCERNING NEW ALGORITHM GENNING SHORT #####=====-----
-; Hmm, they all appear to be 1 off?
-; No, they're not. See: #89, #87.
-#_(doall (map test-both (range 30 50)))
-#_(doall (map test-both (range 85 90)))
-
-; -----=====##### CONCERNING #89 AND #50 #####=====-----
-;   Okay, so, for #89 and #50 old, they both end on "resultant pleasure?" - 
-; which is the last set of tokens in the corpus! So it has nowhere to go from
-; there, since it's using 2-tuples, and so it goes woefully under-sized. That's
-; because my dive doesn't do any backtracking. uuuuuuuuh why doesn't it do any
-; backtracking? Past-me, I AM VERY CROSS.
+#_(def map-loc "resources/public/corpora/loremipsum/2.json")
+#_(use 'wysitutwyg.markov.textgen)
+#_(def dmap (read-into-datamap map-loc))
+#_(prn (str "30: " (gen-sentence dmap 30)))
 
 ; -----=====##### CONCERNING FALLBACK TEXT GENERATION BEHAVIOR #####=====-----
 ;   OKAY I get why some generated texts are slightly shorter than n! That's 
@@ -229,18 +140,6 @@
 ; text will be less than fifty words.
 ;   I will do the former.
 
-(defn time-both [n]
-  (prn (str "For " n " old, then new:"))
-  (do
-    (binding [*rnd* (java.util.Random. 1)]
-      (time (gen-sentence dmap n)))
-    (binding [*rnd* (java.util.Random. 1)]
-      (time (gen-sentence-true-dfs dmap n)))))
-    
-#_(doall (map time-both (range 80 100)))
-#_(doall (map time-both (range 150 155)))
-; What's happening at 153? It takes an inordinate amount of time to resolve.
-
 ;;; -----=====##### CONCERNING 153 #####=====-----
 ;   Watching what's happening using the true-dfs code is quite interesting. One
 ; thing that could be improved is predicting end branches. That is, if a node
@@ -257,3 +156,20 @@
 ; results, but not *partial* results (temporary by, for example, switching to
 ; the "doesn't care about end nodes" algorithm while also leaving the main
 ; computation running in the background).
+;   Okay, so it's the day after aaaand...I think I'm somehow allowing it to 
+; loop infinitely. The nature of the depth comparison should make that not
+; possible, in the traditional looping sense (as in, going around in circles
+; attempting to satisfy the end criteria - because it will be assured to end
+; when depth is overrun) but this is taking Basically Forever.
+;   Well, the algorithm is exponential, and we want to go for 153 deep, 
+; so...uh, yeah, that's Basically Forever if no such sentence exists and it has
+; to try and enumerate every node. Horrifyingly slow. As far as I can remember
+; there isn't really any way to remedy this - the efficiency is exponential by
+; size to branching factor. So, actually, you wouldn't need a loop to take
+; forever - to depth 153 at 3 branching, that's 3^153=Infinity Nodes To Search.
+; I mean, not technically infinity, but yeah, that's not happening.
+;   Hmm. That's troublesome, though.
+;   What would be a good way to estimate how long it *should* take? Because
+; right now I'm thinking maybe it would be best to estimate how long it should
+; take, and then if it takes longer than that by some margin, go and hit the
+; fallback algorithm.
