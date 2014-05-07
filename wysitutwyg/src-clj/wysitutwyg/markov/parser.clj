@@ -58,9 +58,13 @@
 
 (defn- build-output-map
   [start counts end-strings]
-  {:start (map #(update-in % [0] keys-to-strings) start)
-   :end (map str end-strings)
-   :counts (stringify counts)})
+  (let [out-counts (stringify counts)
+        branch-factor (/ (reduce + (map (comp count second) counts))
+                         (count counts))]
+    {:branching-factor branch-factor
+     :start (map #(update-in % [0] keys-to-strings) start)
+     :end (map str end-strings)
+     :counts out-counts}))
 
 (defn- parse-step
   "Recursive step producing a map of the form 
@@ -105,10 +109,3 @@
     (parse-step processed
                 arity
                 end-strings)))
-
-#_(prn (parse-counts test-text {:arity 1 :end-strings #{"." "!" "?"} :delimiter-regex " "}))
-
-(def expected-output
-{:start '([["Ha"] 1] [["Ze"] 3] [["He"] 3] [["She"] 2] [["It"] 2] [["Me"] 1]), :end '("!" "." "?"), :counts '([["!"] {"He" 2, "It" 2}] [["is"] {"sad" 3, "mad" 5}] [["It"] {"is" 2}] [["Ze"] {"jelly" 1, "sad" 1, "mad" 1}] [["."] {"Ze" 1, "He" 1}] [["She"] {"is" 2}] [["mad"] {"." 1, "?" 2, "!" 3}] [["sad"] {"." 1, "?" 2, "!" 1}] [["Me"] {"is" 1}] [["Ha"] {"!" 1}] [["He"] {"is" 3}] [["jelly"] {"?" 1}] [["?"] {"Ha" 1, "Ze" 2, "She" 2}])})
-
-(assert (= expected-output (parse-counts test-text {:arity 1 :end-strings #{"." "!" "?"} :delimiter-regex " "})))
