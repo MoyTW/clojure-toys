@@ -1,6 +1,6 @@
 (ns wysitutwyg.markov.parser)
 
-(def test-text "Me is mad! It is mad? She is mad. He is sad! It is sad? She is sad. Ze mad? Ze sad? Ze jelly? Ha! He is mad! He is mad!")
+(def test-text "Me is mad! It is mad? It is angry. She is mad. He is sad! It is sad? She is sad. Ze mad? Ze sad? Ze jelly? Ha! He is mad! He is mad!")
 
 ;; I won't be winning any elegant code competitions...
 (defn- split-by-string
@@ -33,18 +33,6 @@
        (map #(apply str %))
        (mapcat #(split-by-all % end-strings))))
 
-(defn- keys-to-strings [s]
-  (vec (map #(apply str %) s)))
-
-(defn- inner-map [m]
-  (into {} (map (fn [[k v]] [(apply str k) v]) m)))
-
-(defn- stringify
-  [counts]
-  (->> counts
-       (map #(update-in % [0] keys-to-strings))
-       (map #(update-in % [1] inner-map))))
-
 (defn- update-start
   "Updates iff the arity of the key is equal to n."
   [start n follows rest-corpus]
@@ -58,11 +46,11 @@
 
 (defn- build-output-map
   [start counts end-strings]
-  (let [out-counts (stringify counts)
+  (let [out-counts counts
         branch-factor (/ (reduce + (map (comp count second) counts))
                          (count counts))]
     {:branching-factor branch-factor
-     :start (map #(update-in % [0] keys-to-strings) start)
+     :start start
      :end (map str end-strings)
      :counts out-counts}))
 
@@ -75,16 +63,16 @@
   COUNTn is an int
   NEXTn := [STATEn {STR0 COUNT0, STRn, COUNTn}]
   This isn't really good documentation; it'll confuse people who aren't me."
-  [corpus n end-strings]
+  [corpus arity end-strings]
   (loop [counts {} 
-         start (update-start {} n (first corpus) corpus)
+         start (update-start {} arity (first corpus) corpus)
          corpus corpus]
-    (let [[state rest-corpus] (split-at n corpus)
-           follows (first rest-corpus)]
+    (let [[state rest-corpus] (split-at arity corpus)
+           follows (conj (vec (rest state)) (first rest-corpus))]
       (cond
         (and (seq rest-corpus) (end-strings (last state)))
           (recur (update-in counts [state follows] (fnil inc 0))
-                 (update-start start n follows rest-corpus)
+                 (update-start start arity (first rest-corpus) rest-corpus)
                  (rest corpus))
         (seq rest-corpus)
           (recur (update-in counts [state follows] (fnil inc 0))
@@ -109,3 +97,62 @@
     (parse-step processed
                 arity
                 end-strings)))
+
+;;; What we want is to reduce the number of traversals.
+;;;   For example, if we have "consequences are one" we want to roll it to one
+;;; node, instead of two - instead of [consequences are] [are one] it should be
+;;; [consequences are one].
+;;;   We might also want to remove ones which have only one entrance and exit.
+
+(def parseinfo {:arity 3 :end-strings #{"." "!" "?"} :delimiter-regex " "})
+(def datamap (update-in (parse-counts test-text parseinfo) [:counts] #(into {} %)))
+(def thead ["Ha" "!" "He"])
+
+;;;   note - when you put it together, the :text won't fit nicely, you'll need
+;;; to edit it on arity. Fix that!
+(defn consolidate
+  [{:keys [counts end] end :end} key]
+    (loop [head key result head]
+      (if (= (count (counts head)) 1)
+        (let [next-head (ffirst (counts head))]
+          (recur next-head (conj (vec result) (last next-head))))
+        {:key key 
+         :text result 
+         :textlen (count (remove (into #{} end) result))
+         :endloc (if-let [p (->> (into #{} end)
+                                 (map #(.indexOf result %))
+                                 (filter pos?)
+                                 (seq))]
+                   (apply min p)
+                   -1)
+         :edges (counts head)})))
+
+#_(prn (consolidate datamap thead))
+
+(defn consolidate-datamap
+  [{counts-vec :counts :as datamap}]
+  (let [counts (into {} counts-vec)
+        singles (->> counts
+                     #_(filter #(= 1 (count (second %))))
+                     (map first))
+        replacements (map #(consolidate datamap %) singles)]
+    replacements))
+
+#_(doall (map #(do #_(prn "Key: " (:key %))
+                 #_(prn "Text: " (:text %))
+                 (prn "Edges: " (:edges %))) 
+            (consolidate-datamap datamap)))
+
+(def cons-partial (consolidate-datamap datamap))
+#_(prn (distinct (mapcat #(map first %) (map :edges cons-partial))))
+;; These are the only edge nodes used, aside from the starts
+(def used-edges (distinct (mapcat #(map first %) (map :edges cons-partial))))
+#_(prn (concat (map first (:start datamap)) used-edges))
+
+(def needed-keys (into #{} (concat (map first (:start datamap)) used-edges)))
+(prn (filter #(needed-keys (:key %)) cons-partial))
+(prn "keys required: " (count needed-keys))
+(prn "keys used in current: " (count (:counts datamap)))
+; aaand filter such that only current
+;   Okay, hold on, before I go revamping everything - I should work out how 
+; much this will actually help.
