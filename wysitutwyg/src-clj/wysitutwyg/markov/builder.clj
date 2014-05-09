@@ -1,6 +1,12 @@
 (ns wysitutwyg.markov.builder
   (:require [clojure.data.json :as json]))
 
+(def timeout-msec 10000)
+(defn get-now
+  "Get the current time in milliseconds, using Date.getTime()."
+  []
+  (. (java.util.Date.) getTime))
+  
 ;; Fixes seed for reproducability
 (def ^:dynamic ^java.util.Random *rnd* (java.util.Random. 1))
 (defn- get-rand [x]
@@ -55,21 +61,29 @@
      :node next-node
      :edges (pick-words (counts next-node))}))
 
+;;; This is just a huge cascading mess
+;;; TODO: Make it less silly
 (defn- dfs
   "Runs a dfs to produce a sequence of tokens of n depth ending on a end node."
   [{:keys [counts end] :as datamap} n stack]
-  (if-let [{:keys [depth node edges] :as node-info} (first stack)]
-    (cond
-      (and (= (+ depth (dec (count node))) n) ; TODO: lol
-           (end (last node)))
-        (reverse (map #(% :node) stack))
-      (or (end (last node)) (= depth n) (empty? edges))
-        (recur datamap n (rest stack))
-      :else
-        (let [next-info (gen-next-frame true datamap node-info)
-              new-node-info (update-in node-info [:edges] rest)
-              next-stack (conj (cons new-node-info (rest stack)) next-info)]
-          (recur datamap n next-stack)))))
+  (let [end-time (+ (get-now) timeout-msec)]
+    (loop [stack stack]
+      (if-let [{:keys [depth node edges] :as node-info} (first stack)]
+        (cond
+          (> (get-now) end-time)
+            nil
+          (and (= (+ depth (dec (count node))) n) ; TODO: lol
+               (end (last node)))
+            (reverse (map #(% :node) stack))
+          (or (end (last node)) 
+              (= depth n) 
+              (empty? edges))
+            (recur (rest stack))
+          :else
+            (let [next-info (gen-next-frame true datamap node-info)
+                  new-node-info (update-in node-info [:edges] rest)
+                  next-stack (conj (cons new-node-info (rest stack)) next-info)]
+              (recur next-stack)))))))
 
 (defn- dive
   "Runs a dfs, with no punctuation constraints."
@@ -112,10 +126,17 @@
                       (str %1 %2)
                       (str %1 \space %2))))))
 
-#_(def map-loc "resources/public/corpora/loremipsum/2.json")
-#_(use 'wysitutwyg.markov.textgen)
-#_(def dmap (read-into-datamap map-loc))
-#_(prn (str "30: " (gen-sentence dmap 30)))
+#_(do 
+  (def map-loc "resources/public/corpora/loremipsum/2.json")
+  (use 'wysitutwyg.markov.textgen)
+  (def dmap (read-into-datamap map-loc))
+  (prn (str "30: " (gen-sentence dmap 30)))
+
+  ; confirm timeout operational
+  (def timeout-msec 1)
+  (with-seed 1 (time (doall (map #(gen-sentence dmap %) (range 1 100)))))
+  (def timeout-msec 1000)
+  (with-seed 1 (time (doall (map #(gen-sentence dmap %) (range 1 100))))))
 
 ; -----=====##### CONCERNING FALLBACK TEXT GENERATION BEHAVIOR #####=====-----
 ;   OKAY I get why some generated texts are slightly shorter than n! That's 

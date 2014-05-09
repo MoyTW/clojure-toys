@@ -2,9 +2,8 @@
   (:require [wysitutwyg.markov.builder :as builder]
             [clojure.data.json :as json]))
 
-(def test-text "He is a man. She is a woman. They are married but do not really like each other, and only stay together because they're afraid of being alone. Also they have a dog that is very scared, all the time. He is a man.")
-
-;;; TODO: caching!
+;;; TODO: caching! Except that this isn't, you know, necessarily the best path.
+;;; It's in-memory caching which is...Not Ideal, shall we say?
 (def cache (atom {}))
 
 ;;; TODO: What if you want to break on BEGIN and END blocks?
@@ -26,8 +25,6 @@
   "Slurps and parses. Adds the :name field into the datamap as the file uri."
   [slurpable]
   (parse-into-datamap (str slurpable) (slurp slurpable)))
-
-(def datamap (read-into-datamap "resources/public/corpora/loremipsum/1.json"))
 
 ;;; TODO: Make this less silly.
 (defn string-to-integer
@@ -77,4 +74,5 @@
        (to-seed-count-maps)
        (build-strings datamap)))
 
-(prn (build-strings datamap (to-seed-count-maps (break-text test-text))))
+#_(def datamap (read-into-datamap "resources/public/corpora/loremipsum/1.json"))
+#_(prn (build-strings datamap (to-seed-count-maps (break-text test-text))))
