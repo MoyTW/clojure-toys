@@ -42,13 +42,16 @@
 ;;; TODO: Ugly.
 (defn handle-transform-request
   [json-str]
-  (let [{:keys [corpus file body]} (json/read-str json-str :key-fn keyword)]
-    (if-not (and corpus file body)
-      {:status 400}
-      (if-let [datamap (retrieve-datamap corpus file)]
-        (str (transform datamap body))
-        {:status 404
-         :body (str "Could find targeted file: " corpus "/" file)}))))
+  (prn json-str)
+  (if (empty? json-str)
+    {:status 400 :body "There was no post content."}
+    (let [{:keys [corpus file body]} (json/read-str json-str :key-fn keyword)]
+      (if-not (and corpus file body)
+        {:status 400}
+        (if-let [datamap (retrieve-datamap corpus file)]
+          (str (transform datamap body))
+          {:status 404
+           :body (str "Could find targeted file: " corpus "/" file)})))))
 
 (compojure/defroutes routes
   (compojure/GET "/transformer" [] (describe))
