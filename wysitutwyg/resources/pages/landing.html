@@ -26,28 +26,21 @@
         </div>
         <div id="options" class="centerline">
           <h3>Current Corpus:</h3>
-          <div id="corpus-info">
-            <div id="corpus-name" style="float:left;">Corpus Name Goes Here</div>
-            <div id="corpus-size" style="float:right;">Corpus Size Goes Here</div>
-          </div>
-          <br>
-          <h3>OPTIONS!</h3>
+          Corpus:
+          <select id="corpus-selection" onChange="wysitutwyg.hello.onchange_corpus()">
+            <option value="file-location">Corpus</option>
+          </select>
+          Parse:
           <select id="n-selection">
             <option value=1 selected="selected">1</option>
             <option value=2>2</option>
             <option value=3>3</option>
           </select>
-          <select id="corpus-selection">
-            <option value="file-location">Corpus</option>
-          </select>
-        <button type="button" 
-                id="choose-corpus" 
-                onClick="wysitutwyg.hello.change_corpus()">Change Corpus!</button>
           
         </div>
         <h1>Input:</h1>
         <textarea id="inputtext" class="text" 
-        oninput="wysitutwyg.hello.start_timer()"></textarea>
+        oninput="wysitutwyg.hello.oninput_event()"></textarea>
         
         <h1>Output:</h1>
         <div id="outputtext" class="text"></div>
