@@ -8,7 +8,8 @@
                  [org.clojure/clojurescript "0.0-2173"]
                  [compojure "1.1.6"]
                  [enlive "1.1.5"]
-                 [org.clojure/data.json "0.2.4"]]
+                 [org.clojure/data.json "0.2.4"]
+                 [ring/ring-json "0.3.1"]]
   :plugins [[lein-ring "0.8.10"]
             [lein-cljsbuild "1.0.2"]]
   :cljsbuild {
