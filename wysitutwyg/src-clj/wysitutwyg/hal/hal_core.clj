@@ -23,6 +23,7 @@
   used."
   [resource rel href & property-pairs]
   {:pre [(is-resource resource)
+         (keyword rel)
          (not= (keyword rel) :curies) ; "curies" is reserved
          (every? link-properties (map keyword (take-nth 2 property-pairs)))
          (even? (count property-pairs))]}
@@ -37,6 +38,7 @@
   probably going to change the sig later though."
   [resource rel & links]
   {:pre [(is-resource resource)
+         (keyword rel)
          (not= (keyword rel) :curies) ; "curies" is reserved
          (every? link-properties (map keyword (apply map first links)))
          (every? :href links)]}
@@ -46,11 +48,11 @@
   "Adds a reference to the 'curies' section."
   [resource name href & property-pairs]
   {:pre [(is-resource resource)
+         (keyword name)
          (every? link-properties (map keyword (take-nth 2 property-pairs)))
          (even? (count property-pairs))
          (.contains href "{rel}")]}
   nil)
-
 
 (defn add-property-map
   "Merges property map into the resource. Overwrites with new."

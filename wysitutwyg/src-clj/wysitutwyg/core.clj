@@ -1,7 +1,6 @@
 (ns wysitutwyg.core
   (:use compojure.core)
   (:require [ring.middleware.stacktrace :as mid-stacktrace]
-            [ring.middleware.json :as mid-json]
             [compojure.route :as route]
             [compojure.handler :as handler]
             [compojure.response :as response]
@@ -18,6 +17,4 @@
 
 (def app
   (-> (handler/site main-routes)
-      (mid-stacktrace/wrap-stacktrace)
-      (mid-json/wrap-json-response)
-      (mid-json/wrap-json-body)))
+      (mid-stacktrace/wrap-stacktrace)))
