@@ -1,0 +1,1 @@
+{"targets":[{"arity":1,"end-strings":["\n"],"delimiter-regex":" ","outfile":"1.json"},{"arity":2,"end-strings":["\n"],"delimiter-regex":" ","outfile":"2.json"},{"arity":3,"end-strings":["\n"],"delimiter-regex":" ","outfile":"3.json"}],"corpus":"corpus.txt"}

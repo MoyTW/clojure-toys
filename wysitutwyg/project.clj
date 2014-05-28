@@ -9,7 +9,9 @@
                  [compojure "1.1.6"]
                  [enlive "1.1.5"]
                  [org.clojure/data.json "0.2.4"]
-                 [ring/ring-json "0.3.1"]]
+                 [ring/ring-json "0.3.1"]
+                 [korma "0.3.0-RC5"]
+                 [org.xerial/sqlite-jdbc "3.7.2"]]
   :plugins [[lein-ring "0.8.10"]
             [lein-cljsbuild "1.0.2"]]
   :cljsbuild {
