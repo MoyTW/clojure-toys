@@ -1,7 +1,9 @@
 (ns wysitutwyg.routes.corpora
   (:import java.io.File)
-  (:use [ring.util.response :only [response]])
-  (:require [compojure.core :as compojure]
+  (:use korma.core
+        [ring.util.response :only [response]])
+  (:require [wysitutwyg.db.core :as db]
+            [compojure.core :as compojure]
             [ring.middleware.json :as mid-json]
             [clojure.data.json :as json]
             [wysitutwyg.hal.hal-core :as hal]))
@@ -11,60 +13,57 @@
 ;;;; this directory-as-database structure and put in a Proper Database, from
 ;;;; which things like the size, description, etc, can be stored and retrieved.
 
-;; hahaha my database is the filesystem :(
-(def root (File. "resources/public/corpora"))
-(def corpora-names
-  (->> (.listFiles root)
-       (map #(.getName %))))
-
-(defn get-parse-info
-  [corpus-name]
-  (->> (str root "/" corpus-name)
-       (File.)
-       (.listFiles)
-       (filter #(= "parses.json" (.getName %)))
-       (first)
-       (slurp)
-       (json/read-str)))
-
-(def all-parses 
-  (->> corpora-names
-       (map #(hash-map % (get-parse-info %)))
-       (apply merge)))
-
-(def corpora-embedded
-  (->> corpora-names
-       (map #(-> (hal/new-resource (str "/corpora/" %))
-                 (hal/add-properties :name % 
-                                     :size "Placeholder"
-                                     :description "Placeholder")))))
+(defn build-embedded-corpora
+  "Queries the database to build the embedded corpora resources."
+  []
+  (->> (select db/corpus (fields :id :name :description :word_count))
+       (map #(-> (hal/new-resource (str "/corpora/" (:id %)))
+                 (hal/add-property-map %)))))
 
 (def hal-all-corpora
-  (-> (hal/new-resource "/corpora")
-      (hal/add-properties :num-corpora (count corpora-embedded))
-      (hal/add-embedded-set "corpora" corpora-embedded)))
+  (let [corpora (build-embedded-corpora)]
+    (-> (hal/new-resource "/corpora")
+        (hal/add-link :find "/corpora/{?id}" :templated true)
+        (hal/add-property :num-corpora (count corpora))
+        (hal/add-embedded-set "corpora" (build-embedded-corpora)))))
 
-; Awkward!
-; Not used anymore, but if it were to be used, is this the best way to gen?
-(defn get-parses
-  [name]
-  (let [parses ((all-parses name) "targets")]
-    ;; Bad: self here isn't, uh, self, it's the json parse.
-    (->> (map #(str "/corpora/" name "/" (% "outfile")) parses)
-         (map hal/new-resource)
-         (map #(hal/add-property-map %2 %1) parses)))) ; This is awkward
+(defn select-corpus
+  "Queries the database for corpus + parses."
+  [id]
+  (first
+    (select db/corpus
+      (where {:id id})
+      (fields :id :name :description :word_count)
+      (with db/parse
+        (fields :id :name :arity :delimiter_regex)
+        (with db/end_string (fields :string))))))
 
+;;; This is a horrifying function
+;;; TODO: Un-horrify
+(defn format-parses
+  "Formats end_string element of parses."
+  [parses]
+  (->> parses
+       (map #(dissoc % :id))
+       (map #(update-in % [:end_string] (fn [c] (map vals c)))) ;lol
+       (map #(update-in % [:end_string] flatten))
+       (map #(clojure.set/rename-keys % {:end_string :end_strings}))))
+
+;;; TODO: Proper error response in json and such
 (defn hal-corpus
-  [name]
-  (if ((into #{} corpora-names) name)
-      (-> (hal/new-resource (str "/corpus/" name))
-          (hal/add-properties :parses ((all-parses name) "targets"))
-          #_(hal/add-embedded-set :parses (get-parses name))
-          (response))
-      {:status 404 :body (str "No such corpus, " name)}))
+  "Converts corpus to hal representation."
+  [id]
+  (if-let [{:keys [parse] :as data} (select-corpus id)]
+    (-> (hal/new-resource (str "/corpora/" id))
+        (hal/add-link :list "/corpora")
+        (hal/add-link :find "/corpora/{?id}" :templated true)
+        (hal/add-property-map (dissoc data :parse))
+        (hal/add-property :parses (format-parses parse))
+        (response))
+    {:status 404 :body (str "No such corpus " id)})) 
 
 (compojure/defroutes routes
   (-> (compojure/context "/corpora" []
         (compojure/GET "/" [] (response hal-all-corpora))
-        (compojure/GET "/:name" [name] (hal-corpus name)))
+        (compojure/GET "/:id" [id] (hal-corpus id)))
       (mid-json/wrap-json-response)))

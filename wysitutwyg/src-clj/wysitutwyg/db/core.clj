@@ -43,7 +43,8 @@
     (values
       {:name name
        :description description
-       :text text})))
+       :text text
+       :word_count (count (clojure.string/split text #"\s+"))})))
 
 ;;; This is a pretty big function, huh.
 (defn add-parse

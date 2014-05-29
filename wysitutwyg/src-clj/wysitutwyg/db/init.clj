@@ -2,8 +2,6 @@
   (use korma.core)
   (require [wysitutwyg.db.core :as db]))
 
-; (declare corpus parse end_string)
-
 ;;; Run the sql contained in setup.sql, which creates the appropriate tables.
 (def setup-sql
   (-> (slurp "resources/db/setup.sql")
